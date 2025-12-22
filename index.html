@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            background: #000;
             min-height: 100vh;
             overflow: hidden;
             color: white;
@@ -57,8 +57,8 @@
         .selection-title {
             font-size: 3rem;
             margin-bottom: 2rem;
-            color: #00ff88;
-            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+            color: #ff3300;
+            text-shadow: 0 0 20px rgba(255, 51, 0, 0.7);
             text-align: center;
         }
 
@@ -72,7 +72,7 @@
         }
 
         .vehicle-card {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
             border-radius: 15px;
             padding: 1.5rem;
             text-align: center;
@@ -84,21 +84,21 @@
         }
 
         .vehicle-card:hover {
-            transform: translateY(-10px);
-            border-color: #00ff88;
-            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.3);
+            transform: translateY(-5px);
+            border-color: #ff3300;
+            box-shadow: 0 10px 30px rgba(255, 51, 0, 0.3);
         }
 
         .vehicle-card.selected {
-            border-color: #ff0080;
-            box-shadow: 0 10px 30px rgba(255, 0, 128, 0.3);
-            background: rgba(255, 0, 128, 0.1);
+            border-color: #00ff88;
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.3);
+            background: rgba(0, 255, 136, 0.1);
         }
 
         .vehicle-preview {
             width: 100%;
             height: 200px;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.5);
             border-radius: 10px;
             margin-bottom: 1rem;
             overflow: hidden;
@@ -121,8 +121,22 @@
             color: #ccc;
         }
 
+        .stat-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            margin: 5px 0;
+            overflow: hidden;
+        }
+
+        .stat-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff3300, #ff9900);
+            border-radius: 4px;
+        }
+
         #startButton {
-            background: linear-gradient(45deg, #ff0080, #ff8c00);
+            background: linear-gradient(45deg, #ff3300, #ff9900);
             color: white;
             border: none;
             padding: 1rem 3rem;
@@ -132,11 +146,14 @@
             margin-top: 2rem;
             pointer-events: all;
             transition: all 0.3s ease;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         #startButton:hover {
             transform: scale(1.05);
-            box-shadow: 0 0 30px rgba(255, 0, 128, 0.5);
+            box-shadow: 0 0 30px rgba(255, 51, 0, 0.5);
         }
 
         #startButton:disabled {
@@ -153,49 +170,31 @@
             background: rgba(0, 0, 0, 0.7);
             padding: 1rem;
             border-radius: 10px;
-            min-width: 250px;
+            min-width: 200px;
             pointer-events: all;
             display: none;
-        }
-
-        .hud-section {
-            margin-bottom: 1rem;
+            border: 1px solid rgba(255, 51, 0, 0.5);
         }
 
         .hud-title {
-            color: #00ff88;
+            color: #ff3300;
             font-size: 0.9rem;
             margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        .player-info {
-            display: flex;
-            align-items: center;
-            margin-bottom: 0.5rem;
-            padding: 0.5rem;
-            border-radius: 5px;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .player-info.active {
-            background: rgba(0, 255, 136, 0.2);
-            border-left: 3px solid #00ff88;
-        }
-
-        .player-color {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            margin-right: 10px;
-        }
-
-        .player-name {
-            flex: 1;
-        }
-
-        .player-score {
-            color: #ffd700;
+        #positionDisplay {
+            font-size: 2rem;
             font-weight: bold;
+            color: #00ff88;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+
+        #lapDisplay {
+            font-size: 1.2rem;
+            color: white;
+            margin-top: 0.5rem;
         }
 
         /* Speedometer */
@@ -208,19 +207,22 @@
             border-radius: 10px;
             min-width: 150px;
             display: none;
+            border: 1px solid rgba(255, 51, 0, 0.5);
         }
 
         .speed-value {
             font-size: 2rem;
             font-weight: bold;
-            color: #00ff88;
+            color: #ff3300;
             text-align: center;
+            text-shadow: 0 0 10px rgba(255, 51, 0, 0.5);
         }
 
         .speed-label {
             text-align: center;
             color: #888;
             font-size: 0.9rem;
+            margin-top: 5px;
         }
 
         /* Controls Info */
@@ -233,38 +235,23 @@
             border-radius: 10px;
             font-size: 0.9rem;
             display: none;
+            border: 1px solid rgba(255, 51, 0, 0.5);
         }
 
-        /* Mini Map */
-        #miniMap {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 200px;
-            height: 200px;
-            background: rgba(0, 0, 0, 0.7);
-            border-radius: 10px;
-            overflow: hidden;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            display: none;
+        .control-item {
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
         }
 
-        #miniMapCanvas {
-            width: 100%;
-            height: 100%;
-        }
-
-        /* Lap Counter */
-        #lapCounter {
-            position: absolute;
-            top: 50%;
-            left: 20px;
-            transform: translateY(-50%);
-            background: rgba(0, 0, 0, 0.7);
-            padding: 1rem;
-            border-radius: 10px;
-            font-size: 1.2rem;
-            display: none;
+        .control-key {
+            background: rgba(255, 51, 0, 0.3);
+            padding: 3px 8px;
+            border-radius: 4px;
+            margin-right: 10px;
+            min-width: 60px;
+            text-align: center;
+            font-weight: bold;
         }
 
         /* Loading Screen */
@@ -274,7 +261,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: #1a1a2e;
+            background: #000;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -285,9 +272,9 @@
         .loading-spinner {
             width: 50px;
             height: 50px;
-            border: 5px solid rgba(255, 255, 255, 0.3);
+            border: 5px solid rgba(255, 51, 0, 0.3);
             border-radius: 50%;
-            border-top-color: #00ff88;
+            border-top-color: #ff3300;
             animation: spin 1s linear infinite;
             margin-bottom: 1rem;
         }
@@ -326,9 +313,9 @@
 
         .game-end-title {
             font-size: 4rem;
-            color: #ffd700;
+            color: #ff3300;
             margin-bottom: 2rem;
-            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            text-shadow: 0 0 20px rgba(255, 51, 0, 0.5);
         }
 
         .game-end-subtitle {
@@ -338,7 +325,7 @@
         }
 
         .restart-button {
-            background: linear-gradient(45deg, #00ff88, #0088ff);
+            background: linear-gradient(45deg, #ff3300, #ff9900);
             color: white;
             border: none;
             padding: 1rem 3rem;
@@ -347,75 +334,15 @@
             cursor: pointer;
             margin-top: 2rem;
             transition: all 0.3s ease;
+            font-weight: bold;
         }
 
         .restart-button:hover {
             transform: scale(1.05);
-            box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+            box-shadow: 0 0 30px rgba(255, 51, 0, 0.5);
         }
 
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .selection-title {
-                font-size: 2rem;
-            }
-            
-            #vehicleGrid {
-                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                gap: 1rem;
-            }
-            
-            #gameHUD {
-                top: 10px;
-                left: 10px;
-                padding: 0.5rem;
-                min-width: 200px;
-                font-size: 0.9rem;
-            }
-            
-            #miniMap {
-                width: 150px;
-                height: 150px;
-                top: 10px;
-                right: 10px;
-            }
-            
-            #speedometer {
-                bottom: 10px;
-                left: 10px;
-                padding: 0.5rem;
-                min-width: 120px;
-            }
-            
-            .speed-value {
-                font-size: 1.5rem;
-            }
-            
-            #controlsInfo {
-                bottom: 10px;
-                right: 10px;
-                font-size: 0.8rem;
-                padding: 0.5rem;
-            }
-            
-            #lapCounter {
-                left: 10px;
-                font-size: 1rem;
-                padding: 0.5rem;
-            }
-        }
-
-        /* Vehicle Colors */
-        .color-player { background: #00ff88; }
-        .color-bot-1 { background: #ff0080; }
-        .color-bot-2 { background: #0088ff; }
-        .color-bot-3 { background: #ff8c00; }
-        .color-bot-4 { background: #aa00ff; }
-        .color-bot-5 { background: #00ffff; }
-        .color-bot-6 { background: #ffff00; }
-        .color-bot-7 { background: #ff5555; }
-
-        /* Loading Progress */
+        /* Progress Bar */
         .progress-bar {
             width: 300px;
             height: 10px;
@@ -427,9 +354,50 @@
 
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #00ff88, #0088ff);
+            background: linear-gradient(90deg, #ff3300, #ff9900);
             width: 0%;
             transition: width 0.3s;
+        }
+
+        /* Error Message */
+        #errorMessage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 0, 0, 0.9);
+            padding: 2rem;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+            display: none;
+            z-index: 1004;
+            max-width: 500px;
+        }
+
+        /* Debug Info */
+        #debugInfo {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: #00ff00;
+            font-size: 12px;
+            font-family: monospace;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px;
+            border-radius: 3px;
+            display: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .selection-title { font-size: 2rem; }
+            #vehicleGrid { grid-template-columns: 1fr; }
+            #gameHUD, #speedometer, #controlsInfo {
+                font-size: 0.8rem;
+                padding: 0.5rem;
+            }
+            .speed-value { font-size: 1.5rem; }
         }
     </style>
 </head>
@@ -440,7 +408,7 @@
         <!-- Loading Screen -->
         <div id="loadingScreen">
             <div class="loading-spinner"></div>
-            <div class="loading-text">Loading Game Assets...</div>
+            <div class="loading-text">Loading Game...</div>
             <div class="progress-bar">
                 <div class="progress-fill" id="loadingProgress"></div>
             </div>
@@ -448,26 +416,16 @@
         
         <!-- Vehicle Selection Screen -->
         <div id="selectionScreen" style="display: none;">
-            <h1 class="selection-title">🏁 Select Your Vehicle 🏁</h1>
+            <h1 class="selection-title">SELECT YOUR VEHICLE</h1>
             <div id="vehicleGrid"></div>
             <button id="startButton" disabled>START RACE</button>
         </div>
         
         <!-- Game HUD -->
         <div id="gameHUD">
-            <div class="hud-section">
-                <div class="hud-title">PLAYERS</div>
-                <div id="playersList"></div>
-            </div>
-            <div class="hud-section">
-                <div class="hud-title">POSITION</div>
-                <div id="positionDisplay">1st</div>
-            </div>
-        </div>
-        
-        <!-- Lap Counter -->
-        <div id="lapCounter">
-            <div>LAP: <span id="currentLap">1</span>/<span id="totalLaps">3</span></div>
+            <div class="hud-title">POSITION</div>
+            <div id="positionDisplay">1st</div>
+            <div id="lapDisplay">LAP: <span id="currentLap">1</span>/3</div>
         </div>
         
         <!-- Speedometer -->
@@ -478,16 +436,34 @@
         
         <!-- Controls Info -->
         <div id="controlsInfo">
-            <div><strong>WASD</strong> - Drive</div>
-            <div><strong>Space</strong> - Brake</div>
-            <div><strong>Shift</strong> - Boost</div>
-            <div><strong>R</strong> - Reset Position</div>
-            <div><strong>ESC</strong> - Menu</div>
-        </div>
-        
-        <!-- Mini Map -->
-        <div id="miniMap">
-            <canvas id="miniMapCanvas"></canvas>
+            <div class="control-item">
+                <div class="control-key">W / ↑</div>
+                <div>Accelerate</div>
+            </div>
+            <div class="control-item">
+                <div class="control-key">S / ↓</div>
+                <div>Brake/Reverse</div>
+            </div>
+            <div class="control-item">
+                <div class="control-key">A / ←</div>
+                <div>Turn Left</div>
+            </div>
+            <div class="control-item">
+                <div class="control-key">D / →</div>
+                <div>Turn Right</div>
+            </div>
+            <div class="control-item">
+                <div class="control-key">SPACE</div>
+                <div>Handbrake</div>
+            </div>
+            <div class="control-item">
+                <div class="control-key">SHIFT</div>
+                <div>Boost</div>
+            </div>
+            <div class="control-item">
+                <div class="control-key">R</div>
+                <div>Reset Car</div>
+            </div>
         </div>
         
         <!-- Game End Screen -->
@@ -497,6 +473,12 @@
             <div id="finalScores"></div>
             <button class="restart-button" onclick="restartGame()">PLAY AGAIN</button>
         </div>
+        
+        <!-- Error Message -->
+        <div id="errorMessage"></div>
+        
+        <!-- Debug Info -->
+        <div id="debugInfo"></div>
     </div>
 
     <!-- Three.js Import Map -->
@@ -512,15 +494,14 @@
     <script type="module">
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-        import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
         class VehicleGame {
             constructor() {
-                // Core Three.js objects
-                this.scene = null;
-                this.camera = null;
-                this.renderer = null;
+                // Core Three.js
+                this.scene = new THREE.Scene();
+                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
                 this.controls = null;
                 
                 // Game state
@@ -529,31 +510,24 @@
                 this.vehicles = [];
                 this.bots = [];
                 this.playerVehicle = null;
-                this.road = null;
-                this.checkpoints = [];
-                this.currentCheckpoint = 0;
                 
                 // Physics
                 this.clock = new THREE.Clock();
                 this.keys = {};
+                this.physicsWorld = null;
                 
-                // Vehicle properties
-                this.vehicleColors = [
-                    0x00ff88, 0xff0080, 0x0088ff, 0xff8c00,
-                    0xaa00ff, 0x00ffff, 0xffff00, 0xff5555
-                ];
+                // Track
+                this.trackWidth = 40;
+                this.trackLength = 400;
+                this.checkpoints = [];
+                this.currentCheckpoint = 0;
                 
                 // Game settings
                 this.lapCount = 3;
                 this.playerLap = 1;
                 this.playerPosition = 1;
-                this.gameTime = 0;
                 
-                // Texture loader
-                this.textureLoader = new THREE.TextureLoader();
-                this.vehicleTextures = new Map();
-                
-                // DOM elements
+                // DOM
                 this.loadingScreen = document.getElementById('loadingScreen');
                 this.selectionScreen = document.getElementById('selectionScreen');
                 this.startButton = document.getElementById('startButton');
@@ -561,336 +535,228 @@
                 this.gameHUD = document.getElementById('gameHUD');
                 this.speedometer = document.getElementById('speedometer');
                 this.controlsInfo = document.getElementById('controlsInfo');
-                this.miniMap = document.getElementById('miniMap');
-                this.miniMapCanvas = document.getElementById('miniMapCanvas');
-                this.miniMapCtx = this.miniMapCanvas.getContext('2d');
-                this.lapCounter = document.getElementById('lapCounter');
-                this.currentLapSpan = document.getElementById('currentLap');
-                this.totalLapsSpan = document.getElementById('totalLaps');
-                this.positionDisplay = document.getElementById('positionDisplay');
-                this.gameEndScreen = document.getElementById('gameEndScreen');
-                this.finalMessage = document.getElementById('finalMessage');
-                this.finalScores = document.getElementById('finalScores');
-                this.playersList = document.getElementById('playersList');
-                this.loadingProgress = document.getElementById('loadingProgress');
+                this.errorMessage = document.getElementById('errorMessage');
+                this.debugInfo = document.getElementById('debugInfo');
                 
-                // Initialize
                 this.init();
             }
             
             init() {
                 this.setupScene();
+                this.setupLights();
                 this.setupEventListeners();
                 this.loadAssets();
+                this.animate();
             }
             
             setupScene() {
-                // Create scene
-                this.scene = new THREE.Scene();
-                this.scene.fog = new THREE.Fog(0x87CEEB, 10, 500);
-                
-                // Create camera
-                this.camera = new THREE.PerspectiveCamera(
-                    75,
-                    window.innerWidth / window.innerHeight,
-                    0.1,
-                    1000
-                );
-                this.camera.position.set(0, 10, 20);
-                
-                // Create renderer
-                this.renderer = new THREE.WebGLRenderer({
-                    antialias: true,
-                    alpha: true
-                });
+                // Renderer
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
                 this.renderer.shadowMap.enabled = true;
                 this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                this.renderer.outputEncoding = THREE.sRGBEncoding;
                 this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
                 this.renderer.toneMappingExposure = 1.0;
-                
                 document.getElementById('gameContainer').appendChild(this.renderer.domElement);
                 
-                // Add lights
-                this.setupLights();
+                // Camera
+                this.camera.position.set(0, 15, 30);
                 
-                // Create environment
+                // Scene
+                this.scene.background = new THREE.Color(0x87CEEB);
+                this.scene.fog = new THREE.Fog(0x87CEEB, 50, 300);
+                
+                // Track
                 this.createTrack();
                 
-                // Setup controls
+                // Controls
                 this.controls = new OrbitControls(this.camera, this.renderer.domElement);
                 this.controls.enabled = false;
-                this.controls.maxDistance = 50;
-                this.controls.minDistance = 5;
                 
-                // Handle window resize
                 window.addEventListener('resize', () => this.onWindowResize());
             }
             
             setupLights() {
-                // Ambient light
-                const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-                this.scene.add(ambientLight);
+                // Ambient
+                this.scene.add(new THREE.AmbientLight(0xffffff, 0.6));
                 
-                // Directional light (sun)
-                const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-                directionalLight.position.set(50, 100, 50);
-                directionalLight.castShadow = true;
-                directionalLight.shadow.camera.left = -100;
-                directionalLight.shadow.camera.right = 100;
-                directionalLight.shadow.camera.top = 100;
-                directionalLight.shadow.camera.bottom = -100;
-                directionalLight.shadow.camera.near = 0.5;
-                directionalLight.shadow.camera.far = 500;
-                directionalLight.shadow.mapSize.width = 2048;
-                directionalLight.shadow.mapSize.height = 2048;
-                this.scene.add(directionalLight);
+                // Sun
+                const sun = new THREE.DirectionalLight(0xffffff, 1);
+                sun.position.set(50, 100, 50);
+                sun.castShadow = true;
+                sun.shadow.mapSize.width = 2048;
+                sun.shadow.mapSize.height = 2048;
+                sun.shadow.camera.left = -100;
+                sun.shadow.camera.right = 100;
+                sun.shadow.camera.top = 100;
+                sun.shadow.camera.bottom = -100;
+                this.scene.add(sun);
                 
-                // Hemisphere light for sky color
-                const hemisphereLight = new THREE.HemisphereLight(0x87CEEB, 0x8B7355, 0.3);
-                this.scene.add(hemisphereLight);
+                // Back light
+                const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+                backLight.position.set(-50, 50, -50);
+                this.scene.add(backLight);
             }
             
             createTrack() {
-                // Create road surface
-                const roadGeometry = new THREE.PlaneGeometry(100, 400);
+                // Road surface
+                const roadGeometry = new THREE.PlaneGeometry(this.trackWidth, this.trackLength);
                 const roadMaterial = new THREE.MeshStandardMaterial({
                     color: 0x333333,
                     roughness: 0.8,
-                    metalness: 0.2
+                    metalness: 0.1
                 });
-                this.road = new THREE.Mesh(roadGeometry, roadMaterial);
-                this.road.rotation.x = -Math.PI / 2;
-                this.road.receiveShadow = true;
-                this.scene.add(this.road);
+                const road = new THREE.Mesh(roadGeometry, roadMaterial);
+                road.rotation.x = -Math.PI / 2;
+                road.receiveShadow = true;
+                this.scene.add(road);
                 
-                // Add road markings
-                for (let i = -190; i <= 190; i += 20) {
-                    const lineGeometry = new THREE.PlaneGeometry(2, 10);
-                    const lineMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+                // Road markings
+                for (let i = -180; i <= 180; i += 20) {
+                    const lineGeometry = new THREE.PlaneGeometry(0.5, 2);
+                    const lineMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.5 });
                     const line = new THREE.Mesh(lineGeometry, lineMaterial);
                     line.rotation.x = -Math.PI / 2;
-                    line.position.set(0, 0.01, i);
+                    line.position.set(0, 0.02, i);
                     this.scene.add(line);
                 }
                 
-                // Add grass
-                const grassGeometry = new THREE.PlaneGeometry(200, 400);
-                const grassMaterial = new THREE.MeshStandardMaterial({
-                    color: 0x2d5a27,
-                    roughness: 0.9
-                });
+                // Grass
+                const grassGeometry = new THREE.PlaneGeometry(this.trackWidth * 3, this.trackLength);
+                const grassMaterial = new THREE.MeshStandardMaterial({ color: 0x2d5a27, roughness: 0.9 });
                 const grass = new THREE.Mesh(grassGeometry, grassMaterial);
                 grass.rotation.x = -Math.PI / 2;
                 grass.position.y = -0.1;
                 this.scene.add(grass);
                 
-                // Add barriers
-                const barrierGeometry = new THREE.BoxGeometry(200, 2, 1);
+                // Barriers
+                const barrierGeometry = new THREE.BoxGeometry(this.trackWidth * 3, 2, 1);
                 const barrierMaterial = new THREE.MeshStandardMaterial({ color: 0xcccccc });
                 
                 const barrier1 = new THREE.Mesh(barrierGeometry, barrierMaterial);
-                barrier1.position.set(0, 1, -200);
+                barrier1.position.set(0, 1, -this.trackLength/2);
+                barrier1.castShadow = true;
                 this.scene.add(barrier1);
                 
                 const barrier2 = new THREE.Mesh(barrierGeometry, barrierMaterial);
-                barrier2.position.set(0, 1, 200);
+                barrier2.position.set(0, 1, this.trackLength/2);
+                barrier2.castShadow = true;
                 this.scene.add(barrier2);
                 
-                // Add checkpoints
-                this.createCheckpoints();
-            }
-            
-            createCheckpoints() {
-                const checkpointGeometry = new THREE.BoxGeometry(20, 5, 1);
-                const checkpointMaterial = new THREE.MeshStandardMaterial({
-                    color: 0xffff00,
-                    transparent: true,
-                    opacity: 0.5,
-                    emissive: 0xffff00,
-                    emissiveIntensity: 0.5
-                });
-                
+                // Checkpoints
                 for (let i = -180; i <= 180; i += 40) {
-                    const checkpoint = new THREE.Mesh(checkpointGeometry, checkpointMaterial);
-                    checkpoint.position.set(0, 2.5, i);
-                    checkpoint.rotation.y = Math.PI / 2;
-                    this.scene.add(checkpoint);
                     this.checkpoints.push({
-                        mesh: checkpoint,
                         position: new THREE.Vector3(0, 0, i),
                         passed: false
                     });
                 }
             }
             
-            setupEventListeners() {
-                // Keyboard controls
-                window.addEventListener('keydown', (e) => {
-                    this.keys[e.key.toLowerCase()] = true;
-                    
-                    if (e.key === 'Escape') {
-                        this.togglePause();
-                    }
-                    
-                    if (e.key === 'r' || e.key === 'R') {
-                        if (this.playerVehicle) {
-                            this.resetPlayerPosition();
-                        }
-                    }
-                    
-                    // Boost
-                    if (e.key === 'shift') {
-                        if (this.playerVehicle) {
-                            this.playerVehicle.isBoosting = true;
-                        }
-                    }
-                });
-                
-                window.addEventListener('keyup', (e) => {
-                    this.keys[e.key.toLowerCase()] = false;
-                    
-                    if (e.key === 'Shift') {
-                        if (this.playerVehicle) {
-                            this.playerVehicle.isBoosting = false;
-                        }
-                    }
-                });
-                
-                // Start button
-                this.startButton.addEventListener('click', () => this.startGame());
-            }
-            
             async loadAssets() {
                 try {
-                    // First load the texture
                     this.updateLoadingProgress(10, 'Loading texture...');
                     
-                    // Load color.png texture
-                    const texture = await new Promise((resolve, reject) => {
-                        this.textureLoader.load(
-                            'color.png',
-                            (texture) => {
-                                texture.flipY = false;
-                                texture.encoding = THREE.sRGBEncoding;
-                                resolve(texture);
-                            },
-                            undefined,
-                            (error) => {
-                                console.warn('Could not load color.png, using default colors:', error);
-                                resolve(null);
-                            }
-                        );
-                    });
+                    // Try different texture paths
+                    const texturePaths = ['color.png', './color.png', 'textures/color.png'];
+                    let texture = null;
                     
-                    this.updateLoadingProgress(30, 'Loading 3D models...');
-                    
-                    // Setup GLTF loader with texture
-                    const loader = new GLTFLoader();
-                    
-                    // Setup DRACO loader for compressed models
-                    const dracoLoader = new DRACOLoader();
-                    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
-                    loader.setDRACOLoader(dracoLoader);
-                    
-                    // Try to load .gltf first, then .glb
-                    let gltf;
-                    try {
-                        gltf = await loader.loadAsync('cars.gltf');
-                    } catch (gltfError) {
-                        console.log('.gltf not found, trying .glb...');
-                        gltf = await loader.loadAsync('cars.glb');
+                    for (const path of texturePaths) {
+                        try {
+                            texture = await new Promise((resolve, reject) => {
+                                new THREE.TextureLoader().load(
+                                    path,
+                                    resolve,
+                                    undefined,
+                                    () => reject(new Error(`Texture not found at ${path}`))
+                                );
+                            });
+                            if (texture) break;
+                        } catch (e) {
+                            console.log(`Texture not found at ${path}`);
+                        }
                     }
                     
-                    this.updateLoadingProgress(70, 'Processing vehicles...');
+                    if (!texture) {
+                        console.log('No texture found, using default colors');
+                    }
                     
-                    // Extract vehicles from the GLTF scene
+                    this.updateLoadingProgress(30, 'Loading vehicles...');
+                    
+                    // Load GLTF/GLB
+                    const loader = new GLTFLoader();
+                    let gltf;
+                    
+                    try {
+                        gltf = await loader.loadAsync('cars.gltf');
+                    } catch (e1) {
+                        try {
+                            gltf = await loader.loadAsync('cars.glb');
+                        } catch (e2) {
+                            console.log('No GLTF/GLB found, creating placeholder vehicles');
+                            this.createPlaceholderVehicles();
+                            this.finishLoading();
+                            return;
+                        }
+                    }
+                    
+                    this.updateLoadingProgress(70, 'Processing models...');
+                    
+                    // Extract vehicles from GLTF
                     this.extractVehiclesFromGLTF(gltf.scene, texture);
                     
-                    // If no vehicles found, create placeholders
                     if (this.vehicles.length === 0) {
-                        console.warn('No vehicles found in GLTF file, creating placeholders');
+                        console.log('No vehicles found in model, creating placeholders');
                         this.createPlaceholderVehicles();
                     }
                     
                     console.log(`Loaded ${this.vehicles.length} vehicles`);
                     
                     this.updateLoadingProgress(90, 'Creating UI...');
-                    
-                    // Create vehicle selection UI
-                    this.createVehicleSelectionUI();
-                    
-                    this.updateLoadingProgress(100, 'Ready!');
-                    
-                    // Hide loading screen after a brief delay
-                    setTimeout(() => {
-                        this.loadingScreen.style.display = 'none';
-                        this.selectionScreen.style.display = 'flex';
-                    }, 500);
+                    this.finishLoading();
                     
                 } catch (error) {
-                    console.error('Error loading assets:', error);
+                    console.error('Loading error:', error);
+                    this.showError('Failed to load game assets. Creating placeholder vehicles...');
                     this.createPlaceholderVehicles();
-                    this.createVehicleSelectionUI();
-                    this.loadingScreen.style.display = 'none';
-                    this.selectionScreen.style.display = 'flex';
+                    this.finishLoading();
                 }
             }
             
-            updateLoadingProgress(percent, message) {
-                this.loadingProgress.style.width = `${percent}%`;
-                document.querySelector('.loading-text').textContent = message;
-            }
-            
             extractVehiclesFromGLTF(scene, texture) {
-                // Find all meshes that could be vehicles
-                const vehicleMeshes = [];
+                // Clear any existing vehicles
+                this.vehicles = [];
                 
+                // Look for vehicle meshes
+                const vehicleCandidates = [];
                 scene.traverse((child) => {
                     if (child.isMesh) {
-                        // Check if this mesh could be a vehicle part
-                        const isVehiclePart = 
-                            child.name.toLowerCase().includes('car') ||
-                            child.name.toLowerCase().includes('vehicle') ||
-                            child.name.toLowerCase().includes('truck') ||
-                            child.name.toLowerCase().includes('bus') ||
-                            child.name.toLowerCase().includes('body') ||
-                            child.name.toLowerCase().includes('chassis') ||
-                            child.geometry.boundingSphere?.radius > 0.5;
-                        
-                        if (isVehiclePart) {
-                            vehicleMeshes.push(child);
-                        }
+                        // Any mesh could be a vehicle part
+                        vehicleCandidates.push(child);
                     }
                 });
                 
-                // Group meshes by proximity to find complete vehicles
-                const vehicleGroups = this.groupVehicleMeshes(vehicleMeshes);
+                console.log(`Found ${vehicleCandidates.length} candidate meshes`);
                 
-                // Create vehicle objects from groups
-                vehicleGroups.forEach((group, index) => {
-                    const vehicle = this.createVehicleFromMeshes(group, index, texture);
-                    this.vehicles.push(vehicle);
-                });
-            }
-            
-            groupVehicleMeshes(meshes) {
+                if (vehicleCandidates.length === 0) {
+                    return;
+                }
+                
+                // Group meshes by proximity (within 2 units)
                 const groups = [];
                 const visited = new Set();
                 
-                for (let i = 0; i < meshes.length; i++) {
+                for (let i = 0; i < vehicleCandidates.length; i++) {
                     if (visited.has(i)) continue;
                     
-                    const group = [meshes[i]];
+                    const group = [vehicleCandidates[i]];
                     visited.add(i);
                     
-                    // Find nearby meshes
-                    for (let j = i + 1; j < meshes.length; j++) {
+                    for (let j = i + 1; j < vehicleCandidates.length; j++) {
                         if (visited.has(j)) continue;
                         
-                        const distance = meshes[i].position.distanceTo(meshes[j].position);
-                        if (distance < 5) { // Meshes within 5 units are likely part of same vehicle
-                            group.push(meshes[j]);
+                        const distance = vehicleCandidates[i].position.distanceTo(vehicleCandidates[j].position);
+                        if (distance < 5) {
+                            group.push(vehicleCandidates[j]);
                             visited.add(j);
                         }
                     }
@@ -898,126 +764,163 @@
                     groups.push(group);
                 }
                 
-                return groups;
-            }
-            
-            createVehicleFromMeshes(meshes, index, texture) {
-                // Create a group to hold all vehicle parts
-                const vehicleGroup = new THREE.Group();
+                console.log(`Grouped into ${groups.length} vehicle groups`);
                 
-                // Clone and add all meshes to the group
-                meshes.forEach(mesh => {
-                    const clonedMesh = mesh.clone();
+                // Create vehicle objects
+                groups.forEach((group, index) => {
+                    if (index >= 8) return; // Limit to 8 vehicles
                     
-                    // Apply texture if available
-                    if (texture && clonedMesh.material) {
-                        if (Array.isArray(clonedMesh.material)) {
-                            clonedMesh.material = clonedMesh.material.map(mat => {
-                                const newMat = mat.clone();
-                                newMat.map = texture;
-                                newMat.needsUpdate = true;
-                                return newMat;
-                            });
-                        } else {
-                            clonedMesh.material = clonedMesh.material.clone();
-                            clonedMesh.material.map = texture;
-                            clonedMesh.material.needsUpdate = true;
+                    const vehicleGroup = new THREE.Group();
+                    
+                    // Clone and add all meshes
+                    group.forEach(mesh => {
+                        const clone = mesh.clone();
+                        
+                        // Apply texture if available
+                        if (texture && clone.material) {
+                            if (Array.isArray(clone.material)) {
+                                clone.material.forEach(mat => {
+                                    if (mat) {
+                                        const newMat = mat.clone();
+                                        newMat.map = texture;
+                                        newMat.needsUpdate = true;
+                                        clone.material = newMat;
+                                    }
+                                });
+                            } else {
+                                clone.material = clone.material.clone();
+                                clone.material.map = texture;
+                                clone.material.needsUpdate = true;
+                            }
                         }
-                    }
+                        
+                        clone.castShadow = true;
+                        clone.receiveShadow = true;
+                        vehicleGroup.add(clone);
+                    });
                     
-                    clonedMesh.castShadow = true;
-                    clonedMesh.receiveShadow = true;
-                    vehicleGroup.add(clonedMesh);
+                    // Calculate bounds
+                    const bbox = new THREE.Box3().setFromObject(vehicleGroup);
+                    const size = bbox.getSize(new THREE.Vector3());
+                    const center = bbox.getCenter(new THREE.Vector3());
+                    
+                    // Center the vehicle
+                    vehicleGroup.position.sub(center);
+                    
+                    // Determine vehicle type
+                    let type = 'Car';
+                    if (size.x > 3 || size.z > 6) type = 'Truck';
+                    if (size.y > 2.5) type = 'SUV';
+                    if (size.x < 1.5 && size.z < 3) type = 'Sports Car';
+                    
+                    // Create vehicle object
+                    this.vehicles.push({
+                        id: index,
+                        name: `${type} ${index + 1}`,
+                        type: type,
+                        mesh: vehicleGroup,
+                        size: size,
+                        speed: 8 + (Math.random() * 6),
+                        handling: 0.6 + (Math.random() * 0.3),
+                        acceleration: 0.15 + (Math.random() * 0.1),
+                        color: new THREE.Color().setHSL(index / this.vehicles.length, 0.8, 0.5)
+                    });
                 });
-                
-                // Calculate bounding box for the entire vehicle
-                const bbox = new THREE.Box3().setFromObject(vehicleGroup);
-                const size = bbox.getSize(new THREE.Vector3());
-                const center = bbox.getCenter(new THREE.Vector3());
-                
-                // Center the vehicle
-                vehicleGroup.position.sub(center);
-                
-                // Determine vehicle type based on size
-                let type = 'Car';
-                if (size.x > 4 || size.z > 8) type = 'Truck';
-                if (size.y > 3) type = 'SUV';
-                if (size.x < 2 && size.z < 4) type = 'Sports Car';
-                
-                // Calculate stats based on size
-                const speed = 8 + (12 - size.length()) / 2; // Smaller = faster
-                const handling = 0.5 + (3 - Math.max(size.x, size.z)) / 6;
-                
-                return {
-                    name: `Vehicle ${index + 1}`,
-                    type: type,
-                    mesh: vehicleGroup,
-                    originalMeshes: meshes,
-                    speed: THREE.MathUtils.clamp(speed, 5, 15),
-                    handling: THREE.MathUtils.clamp(handling, 0.3, 0.9),
-                    color: this.vehicleColors[index % this.vehicleColors.length],
-                    size: size,
-                    bbox: bbox
-                };
             }
             
             createPlaceholderVehicles() {
-                const vehicleTypes = [
-                    { name: 'Sports Car', scale: [1.5, 1, 4], speed: 12, handling: 0.9 },
-                    { name: 'SUV', scale: [2, 1.5, 5], speed: 8, handling: 0.7 },
-                    { name: 'Truck', scale: [2.5, 1.8, 7], speed: 6, handling: 0.5 },
-                    { name: 'Race Car', scale: [1.2, 0.8, 3.5], speed: 14, handling: 0.95 }
+                // Create 4 different placeholder vehicles
+                const types = [
+                    { name: 'Sports Car', scale: [1.5, 0.8, 3.5], color: 0xff3300 },
+                    { name: 'SUV', scale: [2, 1.5, 4.5], color: 0x3366ff },
+                    { name: 'Truck', scale: [2.5, 2, 6], color: 0x33cc33 },
+                    { name: 'Race Car', scale: [1.2, 0.7, 3], color: 0xffcc00 }
                 ];
                 
-                for (let i = 0; i < 4; i++) {
-                    const type = vehicleTypes[i];
-                    const geometry = new THREE.BoxGeometry(...type.scale);
-                    const material = new THREE.MeshStandardMaterial({
-                        color: this.vehicleColors[i],
-                        roughness: 0.5,
-                        metalness: 0.5
+                types.forEach((type, index) => {
+                    const group = new THREE.Group();
+                    
+                    // Body
+                    const bodyGeometry = new THREE.BoxGeometry(...type.scale);
+                    const bodyMaterial = new THREE.MeshStandardMaterial({ 
+                        color: type.color,
+                        roughness: 0.4,
+                        metalness: 0.6
                     });
-                    const mesh = new THREE.Mesh(geometry, material);
+                    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                    body.castShadow = true;
+                    body.receiveShadow = true;
+                    group.add(body);
                     
-                    // Create a group for the vehicle
-                    const vehicleGroup = new THREE.Group();
-                    vehicleGroup.add(mesh);
+                    // Windows
+                    const windowGeometry = new THREE.BoxGeometry(type.scale[0] * 0.8, type.scale[1] * 0.3, type.scale[2] * 0.8);
+                    const windowMaterial = new THREE.MeshStandardMaterial({ 
+                        color: 0x222222,
+                        roughness: 0.1,
+                        metalness: 1.0,
+                        transparent: true,
+                        opacity: 0.7
+                    });
+                    const windows = new THREE.Mesh(windowGeometry, windowMaterial);
+                    windows.position.y = type.scale[1] * 0.3;
+                    group.add(windows);
                     
-                    // Add wheels
-                    this.addWheels(vehicleGroup, type.scale);
+                    // Wheels
+                    const wheelGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 8);
+                    const wheelMaterial = new THREE.MeshStandardMaterial({ color: 0x111111 });
+                    
+                    const wheelPositions = [
+                        { x: -type.scale[0]/2 + 0.4, y: -type.scale[1]/2, z: type.scale[2]/2 - 0.5 },
+                        { x: type.scale[0]/2 - 0.4, y: -type.scale[1]/2, z: type.scale[2]/2 - 0.5 },
+                        { x: -type.scale[0]/2 + 0.4, y: -type.scale[1]/2, z: -type.scale[2]/2 + 0.5 },
+                        { x: type.scale[0]/2 - 0.4, y: -type.scale[1]/2, z: -type.scale[2]/2 + 0.5 }
+                    ];
+                    
+                    wheelPositions.forEach(pos => {
+                        const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+                        wheel.position.set(pos.x, pos.y, pos.z);
+                        wheel.rotation.z = Math.PI / 2;
+                        wheel.castShadow = true;
+                        group.add(wheel);
+                    });
                     
                     this.vehicles.push({
+                        id: index,
                         name: type.name,
                         type: type.name,
-                        mesh: vehicleGroup,
-                        originalMeshes: [mesh],
-                        speed: type.speed,
-                        handling: type.handling,
-                        color: this.vehicleColors[i],
+                        mesh: group,
                         size: new THREE.Vector3(...type.scale),
-                        bbox: new THREE.Box3().setFromObject(vehicleGroup)
+                        speed: index === 0 ? 12 : index === 3 ? 14 : index === 1 ? 8 : 6,
+                        handling: index === 0 ? 0.9 : index === 3 ? 0.95 : index === 1 ? 0.7 : 0.6,
+                        acceleration: index === 0 ? 0.2 : index === 3 ? 0.25 : index === 1 ? 0.15 : 0.12,
+                        color: new THREE.Color(type.color)
                     });
-                }
+                });
             }
             
-            addWheels(vehicleGroup, scale) {
-                const wheelGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 8);
-                const wheelMaterial = new THREE.MeshStandardMaterial({ color: 0x222222 });
+            finishLoading() {
+                this.updateLoadingProgress(100, 'Ready!');
                 
-                const [width, height, length] = scale;
-                const wheelPositions = [
-                    { x: -width/2 + 0.4, y: -height/2, z: length/2 - 0.5, rotation: Math.PI / 2 },
-                    { x: width/2 - 0.4, y: -height/2, z: length/2 - 0.5, rotation: Math.PI / 2 },
-                    { x: -width/2 + 0.4, y: -height/2, z: -length/2 + 0.5, rotation: Math.PI / 2 },
-                    { x: width/2 - 0.4, y: -height/2, z: -length/2 + 0.5, rotation: Math.PI / 2 }
-                ];
-                
-                wheelPositions.forEach(pos => {
-                    const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
-                    wheel.position.set(pos.x, pos.y, pos.z);
-                    wheel.rotation.z = pos.rotation;
-                    vehicleGroup.add(wheel);
-                });
+                setTimeout(() => {
+                    this.loadingScreen.style.display = 'none';
+                    this.selectionScreen.style.display = 'flex';
+                    this.createVehicleSelectionUI();
+                }, 500);
+            }
+            
+            updateLoadingProgress(percent, message) {
+                const progress = document.getElementById('loadingProgress');
+                const text = document.querySelector('.loading-text');
+                if (progress) progress.style.width = `${percent}%`;
+                if (text) text.textContent = message;
+            }
+            
+            showError(message) {
+                this.errorMessage.textContent = message;
+                this.errorMessage.style.display = 'block';
+                setTimeout(() => {
+                    this.errorMessage.style.display = 'none';
+                }, 3000);
             }
             
             createVehicleSelectionUI() {
@@ -1028,12 +931,10 @@
                     card.className = 'vehicle-card';
                     card.dataset.index = index;
                     
-                    // Create preview container
                     const preview = document.createElement('div');
                     preview.className = 'vehicle-preview';
                     preview.id = `preview-${index}`;
                     
-                    // Create vehicle info
                     const name = document.createElement('div');
                     name.className = 'vehicle-name';
                     name.textContent = vehicle.name;
@@ -1045,9 +946,18 @@
                     const stats = document.createElement('div');
                     stats.className = 'vehicle-stats';
                     stats.innerHTML = `
-                        <div>Speed: ${vehicle.speed.toFixed(1)}</div>
-                        <div>Handling: ${vehicle.handling.toFixed(1)}</div>
-                        <div>Size: ${vehicle.size.x.toFixed(1)} x ${vehicle.size.z.toFixed(1)}</div>
+                        <div style="margin: 5px 0;">Speed</div>
+                        <div class="stat-bar">
+                            <div class="stat-fill" style="width: ${(vehicle.speed / 15) * 100}%"></div>
+                        </div>
+                        <div style="margin: 5px 0;">Handling</div>
+                        <div class="stat-bar">
+                            <div class="stat-fill" style="width: ${vehicle.handling * 100}%"></div>
+                        </div>
+                        <div style="margin: 5px 0;">Acceleration</div>
+                        <div class="stat-bar">
+                            <div class="stat-fill" style="width: ${(vehicle.acceleration / 0.25) * 100}%"></div>
+                        </div>
                     `;
                     
                     card.appendChild(preview);
@@ -1056,44 +966,39 @@
                     card.appendChild(stats);
                     
                     card.addEventListener('click', () => this.selectVehicle(index));
-                    
                     this.vehicleGrid.appendChild(card);
                     
-                    // Create 3D preview for this vehicle
+                    // Create preview
                     this.createVehiclePreview(index);
                 });
                 
-                // Enable start button when a vehicle is selected
                 this.startButton.disabled = true;
-                this.totalLapsSpan.textContent = this.lapCount;
             }
             
             createVehiclePreview(index) {
-                const previewScene = new THREE.Scene();
-                const previewCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-                const previewRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+                const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
                 
-                previewRenderer.setSize(300, 200);
-                previewRenderer.setClearColor(0x000000, 0);
+                renderer.setSize(300, 200);
+                renderer.setClearColor(0x000000, 0);
                 
                 const container = document.getElementById(`preview-${index}`);
                 if (!container) return;
                 
-                container.appendChild(previewRenderer.domElement);
+                container.appendChild(renderer.domElement);
                 
-                // Add lights
-                const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-                previewScene.add(ambientLight);
+                // Lights
+                scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+                const light = new THREE.DirectionalLight(0xffffff, 0.8);
+                light.position.set(10, 10, 5);
+                scene.add(light);
                 
-                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-                directionalLight.position.set(10, 10, 5);
-                previewScene.add(directionalLight);
-                
-                // Add vehicle
+                // Vehicle
                 const vehicle = this.vehicles[index];
                 const mesh = vehicle.mesh.clone();
                 
-                // Center and scale the vehicle for preview
+                // Center and scale
                 const box = new THREE.Box3().setFromObject(mesh);
                 const center = box.getCenter(new THREE.Vector3());
                 const size = box.getSize(new THREE.Vector3());
@@ -1103,44 +1008,58 @@
                 const scale = 3 / maxDim;
                 mesh.scale.multiplyScalar(scale);
                 
-                previewScene.add(mesh);
+                scene.add(mesh);
                 
-                // Position camera
-                previewCamera.position.set(5, 3, 5);
-                previewCamera.lookAt(0, 0, 0);
+                // Camera
+                camera.position.set(5, 3, 5);
+                camera.lookAt(0, 0, 0);
                 
-                // Auto-rotate animation
+                // Animation
                 let angle = 0;
-                const animatePreview = () => {
+                const animate = () => {
                     if (!container.isConnected) {
-                        previewRenderer.dispose();
+                        renderer.dispose();
                         return;
                     }
                     
                     angle += 0.01;
                     mesh.rotation.y = angle;
                     
-                    previewRenderer.render(previewScene, previewCamera);
-                    requestAnimationFrame(animatePreview);
+                    renderer.render(scene, camera);
+                    requestAnimationFrame(animate);
                 };
                 
-                animatePreview();
+                animate();
             }
             
             selectVehicle(index) {
-                // Remove selection from all cards
                 document.querySelectorAll('.vehicle-card').forEach(card => {
                     card.classList.remove('selected');
                 });
                 
-                // Select clicked card
                 const card = document.querySelector(`.vehicle-card[data-index="${index}"]`);
-                if (card) {
-                    card.classList.add('selected');
-                }
+                if (card) card.classList.add('selected');
                 
                 this.selectedVehicle = index;
                 this.startButton.disabled = false;
+            }
+            
+            setupEventListeners() {
+                // Keyboard
+                window.addEventListener('keydown', (e) => {
+                    const key = e.key.toLowerCase();
+                    this.keys[key] = true;
+                    
+                    if (key === 'escape') this.togglePause();
+                    if (key === 'r' && this.playerVehicle) this.resetPlayer();
+                });
+                
+                window.addEventListener('keyup', (e) => {
+                    this.keys[e.key.toLowerCase()] = false;
+                });
+                
+                // Start button
+                this.startButton.addEventListener('click', () => this.startGame());
             }
             
             startGame() {
@@ -1156,86 +1075,77 @@
                 this.gameHUD.style.display = 'block';
                 this.speedometer.style.display = 'block';
                 this.controlsInfo.style.display = 'block';
-                this.miniMap.style.display = 'block';
-                this.lapCounter.style.display = 'block';
                 
                 // Initialize game
                 this.initializeGame();
                 this.gameStarted = true;
-                
-                // Start game loop
-                this.animate();
             }
             
             initializeGame() {
-                // Clear existing vehicles
+                // Clear existing
                 this.bots.forEach(bot => this.scene.remove(bot.mesh));
                 this.bots = [];
                 
-                // Create player vehicle
+                // Player vehicle
                 const playerData = this.vehicles[this.selectedVehicle];
                 this.playerVehicle = this.createGameVehicle(playerData, true);
-                this.playerVehicle.mesh.position.set(-20, 1, -180);
+                this.playerVehicle.mesh.position.set(-10, 1, -180);
                 this.playerVehicle.name = "Player";
                 this.scene.add(this.playerVehicle.mesh);
                 
-                // Create bot vehicles from remaining vehicles
-                let botIndex = 0;
+                // Create bots from other vehicles
+                let botCount = 0;
                 for (let i = 0; i < this.vehicles.length; i++) {
-                    if (i !== this.selectedVehicle) {
-                        const botData = this.vehicles[i];
-                        const bot = this.createGameVehicle(botData, false);
-                        bot.name = `Bot ${botIndex + 1}`;
-                        bot.index = botIndex;
-                        bot.mesh.position.set(20 + (botIndex * 10), 1, -180 + (botIndex * 5));
-                        bot.lap = 1;
-                        bot.checkpoint = 0;
-                        bot.score = 0;
-                        bot.aiState = 'racing';
-                        bot.aiTargetX = 0;
-                        bot.aiTargetSpeed = bot.maxSpeed * 0.7;
-                        
-                        this.scene.add(bot.mesh);
-                        this.bots.push(bot);
-                        botIndex++;
-                        
-                        // Limit to 7 bots for performance
-                        if (botIndex >= 7) break;
-                    }
+                    if (i === this.selectedVehicle) continue;
+                    if (botCount >= 7) break;
+                    
+                    const botData = this.vehicles[i];
+                    const bot = this.createGameVehicle(botData, false);
+                    bot.name = `Bot ${botCount + 1}`;
+                    bot.id = botCount;
+                    
+                    // Position bots in a grid
+                    const row = Math.floor(botCount / 3);
+                    const col = botCount % 3;
+                    bot.mesh.position.set(-8 + (col * 8), 1, -180 + (row * 5));
+                    
+                    this.scene.add(bot.mesh);
+                    this.bots.push(bot);
+                    botCount++;
                 }
                 
-                // Setup camera to follow player
-                this.setupFollowCamera();
+                console.log(`Created ${botCount} bots`);
                 
-                // Update HUD
-                this.updateHUD();
-                this.updateMiniMap();
+                // Setup camera
+                this.setupCamera();
                 
                 // Reset game state
                 this.playerLap = 1;
                 this.currentCheckpoint = 0;
-                this.gameTime = 0;
                 this.playerPosition = 1;
-                this.currentLapSpan.textContent = '1';
+                document.getElementById('currentLap').textContent = '1';
+                document.getElementById('positionDisplay').textContent = '1st';
             }
             
-            createGameVehicle(vehicleData, isPlayer) {
-                const mesh = vehicleData.mesh.clone();
+            createGameVehicle(data, isPlayer) {
+                const mesh = data.mesh.clone();
                 
-                // Apply player color if needed
                 if (isPlayer) {
+                    // Make player vehicle green
                     mesh.traverse((child) => {
                         if (child.isMesh && child.material) {
                             if (Array.isArray(child.material)) {
                                 child.material.forEach(mat => {
-                                    mat.color.setHex(0x00ff88);
-                                    mat.emissive.setHex(0x003322);
-                                    mat.emissiveIntensity = 0.2;
+                                    if (mat) {
+                                        mat.color.setHex(0x00ff88);
+                                        mat.emissive.setHex(0x003322);
+                                        mat.emissiveIntensity = 0.3;
+                                    }
                                 });
                             } else {
                                 child.material.color.setHex(0x00ff88);
                                 child.material.emissive.setHex(0x003322);
-                                child.material.emissiveIntensity = 0.2;
+                                child.material.emissiveIntensity = 0.3;
                             }
                         }
                     });
@@ -1243,499 +1153,205 @@
                 
                 return {
                     mesh: mesh,
-                    speed: vehicleData.speed,
-                    handling: vehicleData.handling,
+                    data: data,
                     velocity: new THREE.Vector3(),
                     rotation: 0,
-                    currentSpeed: 0,
-                    maxSpeed: vehicleData.speed * 2,
-                    acceleration: 0.2,
-                    braking: 0.3,
-                    turningSpeed: vehicleData.handling * 0.08,
+                    speed: 0,
+                    maxSpeed: data.speed * 3,
+                    acceleration: data.acceleration,
+                    deceleration: 0.2,
+                    turnSpeed: data.handling * 0.1,
+                    driftFactor: 0.95,
                     isPlayer: isPlayer,
                     lap: 1,
                     checkpoint: 0,
-                    score: 0,
+                    boost: 100,
                     isBoosting: false,
-                    boostAmount: 100,
-                    size: vehicleData.size
+                    name: isPlayer ? "Player" : data.name
                 };
             }
             
-            setupFollowCamera() {
-                // Create a camera target that follows the player
+            setupCamera() {
                 this.cameraTarget = new THREE.Object3D();
                 this.scene.add(this.cameraTarget);
-                
-                // Enable controls for debugging view
-                this.controls.enabled = true;
                 this.controls.target = this.playerVehicle.mesh.position;
             }
             
-            updateHUD() {
-                // Update players list
-                this.playersList.innerHTML = '';
-                
-                // Calculate all vehicle positions
-                const allVehicles = [
-                    { ...this.playerVehicle, name: 'Player', colorClass: 'color-player' },
-                    ...this.bots.map((bot, idx) => ({
-                        ...bot,
-                        name: bot.name,
-                        colorClass: `color-bot-${idx + 1}`
-                    }))
-                ];
-                
-                // Sort by progress (lap * 1000 + checkpoint * 100 + position.z)
-                allVehicles.sort((a, b) => {
-                    const aProgress = (a.lap * 1000) + (a.checkpoint * 100) + a.mesh.position.z;
-                    const bProgress = (b.lap * 1000) + (b.checkpoint * 100) + b.mesh.position.z;
-                    return bProgress - aProgress; // Higher progress = better position
-                });
-                
-                // Update player position
-                this.playerPosition = allVehicles.findIndex(v => v.name === 'Player') + 1;
-                this.positionDisplay.textContent = this.getOrdinal(this.playerPosition);
-                
-                // Display all vehicles in order
-                allVehicles.forEach((vehicle, index) => {
-                    const vehicleElement = document.createElement('div');
-                    vehicleElement.className = `player-info ${vehicle.name === 'Player' ? 'active' : ''}`;
-                    vehicleElement.innerHTML = `
-                        <div class="player-color ${vehicle.colorClass}"></div>
-                        <div class="player-name">${vehicle.name}</div>
-                        <div class="player-score">Lap: ${vehicle.lap}/${this.lapCount}</div>
-                    `;
-                    this.playersList.appendChild(vehicleElement);
-                });
-                
-                // Update speedometer
-                if (this.playerVehicle) {
-                    const speed = Math.abs(this.playerVehicle.currentSpeed * 50).toFixed(0);
-                    document.querySelector('.speed-value').textContent = speed;
-                }
-                
-                // Update lap counter
-                this.currentLapSpan.textContent = this.playerLap;
-            }
-            
-            updateMiniMap() {
-                const ctx = this.miniMapCtx;
-                const width = this.miniMapCanvas.width = this.miniMap.clientWidth;
-                const height = this.miniMapCanvas.height = this.miniMap.clientHeight;
-                
-                // Clear canvas
-                ctx.clearRect(0, 0, width, height);
-                
-                // Draw track background
-                ctx.fillStyle = 'rgba(30, 30, 30, 0.9)';
-                ctx.fillRect(0, 0, width, height);
-                
-                // Draw track (simplified rectangle)
-                ctx.fillStyle = 'rgba(51, 51, 51, 0.9)';
-                ctx.fillRect(width * 0.25, 10, width * 0.5, height - 20);
-                
-                // Draw center line
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-                ctx.setLineDash([5, 5]);
-                ctx.beginPath();
-                ctx.moveTo(width / 2, 10);
-                ctx.lineTo(width / 2, height - 10);
-                ctx.stroke();
-                ctx.setLineDash([]);
-                
-                // Draw checkpoints
-                this.checkpoints.forEach((checkpoint, index) => {
-                    const progress = (checkpoint.position.z + 200) / 400;
-                    const yPos = 10 + (height - 20) * (1 - progress);
-                    ctx.fillStyle = checkpoint.passed ? '#00ff00' : '#ffff00';
-                    ctx.beginPath();
-                    ctx.rect(width * 0.25 - 5, yPos - 2, width * 0.5 + 10, 4);
-                    ctx.fill();
-                });
-                
-                // Draw player
-                if (this.playerVehicle) {
-                    const playerZ = this.playerVehicle.mesh.position.z;
-                    const progress = (playerZ + 200) / 400;
-                    const yPos = 10 + (height - 20) * (1 - progress);
-                    const xPos = width / 2 + (this.playerVehicle.mesh.position.x / 50) * (width * 0.25);
-                    
-                    // Draw direction indicator
-                    ctx.save();
-                    ctx.translate(xPos, yPos);
-                    ctx.rotate(-this.playerVehicle.mesh.rotation.y);
-                    
-                    ctx.fillStyle = '#00ff88';
-                    ctx.beginPath();
-                    ctx.moveTo(0, -6);
-                    ctx.lineTo(4, 6);
-                    ctx.lineTo(-4, 6);
-                    ctx.closePath();
-                    ctx.fill();
-                    
-                    ctx.restore();
-                    
-                    // Draw player dot
-                    ctx.fillStyle = '#00ff88';
-                    ctx.beginPath();
-                    ctx.arc(xPos, yPos, 3, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-                
-                // Draw bots
-                this.bots.forEach((bot, index) => {
-                    const botZ = bot.mesh.position.z;
-                    const progress = (botZ + 200) / 400;
-                    const yPos = 10 + (height - 20) * (1 - progress);
-                    const xPos = width / 2 + (bot.mesh.position.x / 50) * (width * 0.25);
-                    
-                    const colors = ['#ff0080', '#0088ff', '#ff8c00', '#aa00ff', '#00ffff', '#ffff00', '#ff5555'];
-                    
-                    ctx.fillStyle = colors[index % colors.length];
-                    ctx.beginPath();
-                    ctx.arc(xPos, yPos, 2, 0, Math.PI * 2);
-                    ctx.fill();
-                });
-            }
-            
-            updateBotAI(bot, deltaTime) {
-                // Simple AI with multiple states
-                switch (bot.aiState) {
-                    case 'racing':
-                        this.updateRacingAI(bot, deltaTime);
-                        break;
-                    case 'overtaking':
-                        this.updateOvertakingAI(bot, deltaTime);
-                        break;
-                    case 'recovering':
-                        this.updateRecoveringAI(bot, deltaTime);
-                        break;
-                }
-                
-                // State transitions
-                if (Math.abs(bot.mesh.position.x) > 40 && bot.aiState !== 'recovering') {
-                    bot.aiState = 'recovering';
-                    bot.aiRecoverTime = 0;
-                }
-                
-                if (bot.aiState === 'recovering' && Math.abs(bot.mesh.position.x) < 10) {
-                    bot.aiState = 'racing';
-                }
-                
-                // Check checkpoints
-                this.checkBotCheckpoints(bot);
-                
-                // Update lap if reached end
-                if (bot.mesh.position.z > 190 && bot.lap < this.lapCount) {
-                    bot.lap++;
-                    bot.mesh.position.z = -180;
-                    bot.checkpoint = 0;
-                }
-            }
-            
-            updateRacingAI(bot, deltaTime) {
-                // Target speed with some variation
-                bot.aiTargetSpeed = bot.maxSpeed * (0.6 + Math.random() * 0.3);
-                
-                // Move toward center of track with some randomness
-                bot.aiTargetX = (Math.random() - 0.5) * 20;
-                
-                // Adjust speed toward target
-                if (bot.currentSpeed < bot.aiTargetSpeed) {
-                    bot.currentSpeed = Math.min(
-                        bot.currentSpeed + bot.acceleration * deltaTime,
-                        bot.aiTargetSpeed
-                    );
-                } else {
-                    bot.currentSpeed = Math.max(
-                        bot.currentSpeed - 0.1 * deltaTime,
-                        bot.aiTargetSpeed * 0.8
-                    );
-                }
-                
-                // Adjust position toward target
-                const xDiff = bot.aiTargetX - bot.mesh.position.x;
-                bot.rotation += Math.sign(xDiff) * bot.turningSpeed * deltaTime * 0.5;
-                
-                // Apply movement
-                bot.velocity.z = -bot.currentSpeed;
-                bot.velocity.x = Math.sin(bot.rotation) * 2;
-                
-                // Update position
-                bot.mesh.position.x += bot.velocity.x * deltaTime;
-                bot.mesh.position.z += bot.velocity.z * deltaTime;
-                
-                // Smooth rotation
-                bot.rotation *= 0.95;
-                bot.mesh.rotation.y = bot.rotation;
-            }
-            
-            updateOvertakingAI(bot, deltaTime) {
-                // Similar to racing but with more aggressive steering
-                this.updateRacingAI(bot, deltaTime);
-                bot.aiTargetSpeed = bot.maxSpeed * 0.9;
-            }
-            
-            updateRecoveringAI(bot, deltaTime) {
-                bot.aiRecoverTime += deltaTime;
-                
-                // Try to get back to track center
-                const targetX = 0;
-                const xDiff = targetX - bot.mesh.position.x;
-                bot.rotation = Math.atan2(xDiff, 10) * 0.5;
-                
-                // Slow down while recovering
-                bot.currentSpeed = Math.max(bot.currentSpeed - 0.2 * deltaTime, bot.maxSpeed * 0.3);
-                
-                // Apply movement
-                bot.velocity.z = -bot.currentSpeed;
-                bot.velocity.x = Math.sin(bot.rotation) * 3;
-                
-                // Update position
-                bot.mesh.position.x += bot.velocity.x * deltaTime;
-                bot.mesh.position.z += bot.velocity.z * deltaTime;
-                
-                bot.mesh.rotation.y = bot.rotation;
-                
-                // Return to racing after 2 seconds
-                if (bot.aiRecoverTime > 2) {
-                    bot.aiState = 'racing';
-                }
-            }
-            
-            checkBotCheckpoints(bot) {
-                this.checkpoints.forEach((checkpoint, index) => {
-                    const distance = bot.mesh.position.distanceTo(checkpoint.position);
-                    if (distance < 15 && index > bot.checkpoint) {
-                        bot.checkpoint = index;
-                        bot.score += 100;
-                    }
-                });
-            }
-            
-            checkPlayerCheckpoints() {
-                this.checkpoints.forEach((checkpoint, index) => {
-                    const distance = this.playerVehicle.mesh.position.distanceTo(checkpoint.position);
-                    if (distance < 15 && index > this.currentCheckpoint) {
-                        this.currentCheckpoint = index;
-                        checkpoint.passed = true;
-                        checkpoint.mesh.material.color.setHex(0x00ff00);
-                        
-                        // Add score
-                        this.playerVehicle.score += 100;
-                        
-                        // Visual feedback
-                        checkpoint.mesh.material.emissiveIntensity = 1.0;
-                        setTimeout(() => {
-                            checkpoint.mesh.material.emissiveIntensity = 0.5;
-                        }, 200);
-                    }
-                });
-                
-                // Check if lap is complete
-                if (this.playerVehicle.mesh.position.z > 190 && this.currentCheckpoint === this.checkpoints.length - 1) {
-                    this.playerLap++;
-                    this.currentCheckpoint = 0;
-                    
-                    // Reset checkpoints
-                    this.checkpoints.forEach(checkpoint => {
-                        checkpoint.passed = false;
-                        checkpoint.mesh.material.color.setHex(0xffff00);
-                    });
-                    
-                    // Reset position for new lap
-                    this.playerVehicle.mesh.position.z = -180;
-                    
-                    // Update HUD
-                    this.currentLapSpan.textContent = this.playerLap;
-                    
-                    // Check if race is complete
-                    if (this.playerLap > this.lapCount) {
-                        this.endGame(true);
-                    }
-                }
-            }
-            
-            updatePlayerControls(deltaTime) {
+            updatePlayer(deltaTime) {
                 if (!this.playerVehicle) return;
                 
                 const vehicle = this.playerVehicle;
+                const mesh = vehicle.mesh;
                 
-                // Boost handling
-                const boostMultiplier = vehicle.isBoosting && vehicle.boostAmount > 0 ? 1.5 : 1;
-                if (vehicle.isBoosting && vehicle.boostAmount > 0) {
-                    vehicle.boostAmount = Math.max(vehicle.boostAmount - 20 * deltaTime, 0);
-                } else if (!vehicle.isBoosting && vehicle.boostAmount < 100) {
-                    vehicle.boostAmount = Math.min(vehicle.boostAmount + 10 * deltaTime, 100);
+                // Boost
+                vehicle.isBoosting = this.keys['shift'] && vehicle.boost > 0;
+                if (vehicle.isBoosting) {
+                    vehicle.boost = Math.max(vehicle.boost - 40 * deltaTime, 0);
+                } else if (vehicle.boost < 100) {
+                    vehicle.boost = Math.min(vehicle.boost + 20 * deltaTime, 100);
                 }
+                
+                const boostMultiplier = vehicle.isBoosting ? 1.5 : 1;
                 
                 // Acceleration
                 if (this.keys['w'] || this.keys['arrowup']) {
-                    vehicle.currentSpeed = Math.min(
-                        vehicle.currentSpeed + vehicle.acceleration * deltaTime * boostMultiplier,
-                        vehicle.maxSpeed * boostMultiplier
+                    vehicle.speed = THREE.MathUtils.lerp(
+                        vehicle.speed,
+                        vehicle.maxSpeed * boostMultiplier,
+                        vehicle.acceleration * deltaTime * 10
                     );
                 }
-                // Braking/Reverse
+                // Braking
                 else if (this.keys['s'] || this.keys['arrowdown']) {
-                    vehicle.currentSpeed = Math.max(
-                        vehicle.currentSpeed - vehicle.braking * deltaTime,
-                        -vehicle.maxSpeed * 0.5
+                    vehicle.speed = THREE.MathUtils.lerp(
+                        vehicle.speed,
+                        -vehicle.maxSpeed * 0.5,
+                        vehicle.deceleration * deltaTime * 10
                     );
                 }
-                // Space for handbrake
-                else if (this.keys[' ']) {
-                    vehicle.currentSpeed *= 0.95;
-                    vehicle.rotation *= 1.1; // More slide when handbraking
-                }
-                // Natural deceleration
+                // Coasting
                 else {
-                    if (vehicle.currentSpeed > 0) {
-                        vehicle.currentSpeed = Math.max(vehicle.currentSpeed - 0.05 * deltaTime, 0);
-                    } else if (vehicle.currentSpeed < 0) {
-                        vehicle.currentSpeed = Math.min(vehicle.currentSpeed + 0.05 * deltaTime, 0);
+                    vehicle.speed *= 0.98;
+                    if (Math.abs(vehicle.speed) < 0.1) vehicle.speed = 0;
+                }
+                
+                // Turning (only when moving)
+                if (Math.abs(vehicle.speed) > 0.5) {
+                    const turnMultiplier = vehicle.turnSpeed * (1 - Math.abs(vehicle.speed) / vehicle.maxSpeed * 0.7);
+                    
+                    if (this.keys['a'] || this.keys['arrowleft']) {
+                        vehicle.rotation += turnMultiplier * deltaTime * Math.sign(vehicle.speed);
+                    }
+                    if (this.keys['d'] || this.keys['arrowright']) {
+                        vehicle.rotation -= turnMultiplier * deltaTime * Math.sign(vehicle.speed);
+                    }
+                    
+                    // Handbrake/drift
+                    if (this.keys[' ']) {
+                        vehicle.rotation *= 1.1;
+                        vehicle.speed *= vehicle.driftFactor;
                     }
                 }
                 
-                // Turning
-                const turnMultiplier = 1 + (vehicle.currentSpeed / vehicle.maxSpeed) * 0.5;
-                if (this.keys['a'] || this.keys['arrowleft']) {
-                    vehicle.rotation += vehicle.turningSpeed * deltaTime * turnMultiplier;
-                }
-                if (this.keys['d'] || this.keys['arrowright']) {
-                    vehicle.rotation -= vehicle.turningSpeed * deltaTime * turnMultiplier;
-                }
-                
-                // Apply rotation smoothing
+                // Smooth rotation
                 vehicle.rotation *= 0.9;
                 
-                // Update velocity based on rotation
-                vehicle.velocity.x = Math.sin(vehicle.rotation) * vehicle.currentSpeed * 0.5;
-                vehicle.velocity.z = -Math.cos(vehicle.rotation) * vehicle.currentSpeed;
-                
                 // Update position
-                vehicle.mesh.position.x += vehicle.velocity.x * deltaTime;
-                vehicle.mesh.position.z += vehicle.velocity.z * deltaTime;
+                mesh.rotation.y = vehicle.rotation;
+                const moveSpeed = vehicle.speed * deltaTime;
                 
-                // Keep on track (with some allowance)
-                if (Math.abs(vehicle.mesh.position.x) > 45) {
-                    vehicle.mesh.position.x = THREE.MathUtils.clamp(vehicle.mesh.position.x, -45, 45);
-                    vehicle.currentSpeed *= 0.8; // Slow down when hitting barrier
+                const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), vehicle.rotation);
+                mesh.position.add(forward.multiplyScalar(moveSpeed));
+                
+                // Keep on track
+                mesh.position.x = THREE.MathUtils.clamp(mesh.position.x, -this.trackWidth/2 + 2, this.trackWidth/2 - 2);
+                
+                // Check if off track
+                if (Math.abs(mesh.position.x) > this.trackWidth/2 - 1) {
+                    vehicle.speed *= 0.7; // Slow down when hitting barrier
                 }
-                
-                // Update rotation
-                vehicle.mesh.rotation.y = vehicle.rotation;
                 
                 // Update camera
-                this.updateCamera(deltaTime);
+                this.updateCamera();
                 
-                // Check checkpoints
-                this.checkPlayerCheckpoints();
+                // Update speedometer
+                const speedKmh = Math.abs(vehicle.speed * 20);
+                document.querySelector('.speed-value').textContent = Math.floor(speedKmh);
+                
+                // Update position display
+                this.updatePosition();
             }
             
-            updateCamera(deltaTime) {
-                if (!this.playerVehicle || !this.cameraTarget) return;
+            updateCamera() {
+                if (!this.playerVehicle) return;
                 
                 const vehicle = this.playerVehicle;
+                const mesh = vehicle.mesh;
                 
-                // Update camera target
-                this.cameraTarget.position.lerp(vehicle.mesh.position, 0.1);
-                this.controls.target.lerp(vehicle.mesh.position, 0.1);
+                // Camera follows behind vehicle
+                const cameraDistance = 15;
+                const cameraHeight = 8;
                 
-                // Position camera behind vehicle
-                const cameraDistance = 15 + (vehicle.currentSpeed / vehicle.maxSpeed) * 5;
-                const cameraHeight = 5 + (vehicle.currentSpeed / vehicle.maxSpeed) * 3;
+                const behind = new THREE.Vector3(0, 0, cameraDistance);
+                behind.applyAxisAngle(new THREE.Vector3(0, 1, 0), mesh.rotation.y);
                 
-                const cameraOffset = new THREE.Vector3(
-                    Math.sin(vehicle.rotation) * -cameraDistance,
-                    cameraHeight,
-                    Math.cos(vehicle.rotation) * -cameraDistance
-                );
+                const targetPos = mesh.position.clone().add(behind);
+                targetPos.y = cameraHeight;
                 
-                const targetPosition = vehicle.mesh.position.clone().add(cameraOffset);
-                this.camera.position.lerp(targetPosition, 0.1);
-                this.camera.lookAt(this.cameraTarget.position);
+                this.camera.position.lerp(targetPos, 0.1);
+                this.camera.lookAt(mesh.position.x, mesh.position.y + 2, mesh.position.z);
             }
             
-            resetPlayerPosition() {
-                if (this.playerVehicle) {
-                    this.playerVehicle.mesh.position.set(-20, 1, -180);
-                    this.playerVehicle.mesh.rotation.y = 0;
-                    this.playerVehicle.currentSpeed = 0;
-                    this.playerVehicle.rotation = 0;
-                    this.playerVehicle.boostAmount = 100;
+            updateBotAI(bot, deltaTime) {
+                const mesh = bot.mesh;
+                
+                // Simple AI: follow the track with some randomness
+                const targetX = (Math.random() - 0.5) * 10;
+                const xDiff = targetX - mesh.position.x;
+                
+                // Adjust rotation toward target
+                bot.rotation += Math.sign(xDiff) * bot.turnSpeed * deltaTime * 0.5;
+                bot.rotation *= 0.95;
+                
+                // Maintain speed
+                const targetSpeed = bot.maxSpeed * (0.6 + Math.random() * 0.3);
+                bot.speed = THREE.MathUtils.lerp(bot.speed, targetSpeed, bot.acceleration * deltaTime * 5);
+                
+                // Update position
+                mesh.rotation.y = bot.rotation;
+                const moveSpeed = bot.speed * deltaTime;
+                
+                const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), bot.rotation);
+                mesh.position.add(forward.multiplyScalar(moveSpeed));
+                
+                // Keep on track
+                mesh.position.x = THREE.MathUtils.clamp(mesh.position.x, -this.trackWidth/2 + 2, this.trackWidth/2 - 2);
+                
+                // Update lap based on position
+                if (mesh.position.z > 190 && bot.lap < this.lapCount) {
+                    bot.lap++;
+                    mesh.position.z = -180;
                 }
             }
             
-            togglePause() {
-                // Simple pause toggle
-                this.gameStarted = !this.gameStarted;
-                if (this.gameStarted) {
-                    this.animate();
-                }
-            }
-            
-            endGame(win) {
-                this.gameStarted = false;
+            updatePosition() {
+                if (!this.playerVehicle) return;
                 
-                // Show end game screen
-                this.gameEndScreen.classList.add('show');
-                
-                // Set final message
-                const positionText = this.getOrdinal(this.playerPosition);
-                if (this.playerPosition === 1) {
-                    this.finalMessage.textContent = `🏆 YOU WON! 🏆`;
-                } else if (this.playerPosition <= 3) {
-                    this.finalMessage.textContent = `🥈 ${positionText} Place - Great Job!`;
-                } else {
-                    this.finalMessage.textContent = `${positionText} Place - Better luck next time!`;
-                }
-                
-                // Calculate and display final scores
-                this.calculateFinalScores();
-            }
-            
-            calculateFinalScores() {
-                // Create array of all vehicles with scores
+                // Calculate all vehicle progress
                 const allVehicles = [
-                    { ...this.playerVehicle, name: 'Player', colorClass: 'color-player' },
-                    ...this.bots.map((bot, idx) => ({
-                        ...bot,
-                        name: bot.name,
-                        colorClass: `color-bot-${idx + 1}`
-                    }))
+                    { ...this.playerVehicle, progress: (this.playerLap * 1000) + this.playerVehicle.mesh.position.z },
+                    ...this.bots.map(bot => ({ ...bot, progress: (bot.lap * 1000) + bot.mesh.position.z }))
                 ];
                 
-                // Add lap bonus
-                allVehicles.forEach(vehicle => {
-                    vehicle.totalScore = vehicle.score + (vehicle.lap * 500);
-                });
+                // Sort by progress (higher = better)
+                allVehicles.sort((a, b) => b.progress - a.progress);
                 
-                // Sort by total score (descending)
-                allVehicles.sort((a, b) => b.totalScore - a.totalScore);
+                // Find player position
+                const playerIndex = allVehicles.findIndex(v => v.isPlayer);
+                this.playerPosition = playerIndex + 1;
                 
-                // Display scores
-                this.finalScores.innerHTML = '<h3 style="margin-bottom: 20px; color: #ffd700;">Final Scores</h3>';
-                allVehicles.forEach((vehicle, index) => {
-                    const scoreElement = document.createElement('div');
-                    scoreElement.className = 'player-info';
-                    scoreElement.style.margin = '10px 0';
-                    scoreElement.style.padding = '15px';
-                    scoreElement.style.background = index === 0 ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 255, 255, 0.1)';
-                    scoreElement.innerHTML = `
-                        <div style="display: flex; align-items: center; width: 100%;">
-                            <div style="font-size: 1.2rem; font-weight: bold; margin-right: 15px; min-width: 30px;">
-                                ${index + 1}
-                            </div>
-                            <div class="player-color ${vehicle.colorClass}" style="margin-right: 10px;"></div>
-                            <div style="flex: 1; font-size: 1.1rem;">${vehicle.name}</div>
-                            <div style="color: #ffd700; font-weight: bold;">
-                                ${vehicle.totalScore} pts
-                            </div>
-                        </div>
-                    `;
-                    this.finalScores.appendChild(scoreElement);
+                // Update display
+                const positionText = this.getOrdinal(this.playerPosition);
+                document.getElementById('positionDisplay').textContent = positionText;
+                document.getElementById('currentLap').textContent = this.playerLap;
+                
+                // Check for lap completion
+                if (this.playerVehicle.mesh.position.z > 190 && this.currentCheckpoint === this.checkpoints.length - 1) {
+                    this.playerLap++;
+                    this.currentCheckpoint = 0;
+                    this.playerVehicle.mesh.position.z = -180;
+                    
+                    if (this.playerLap > this.lapCount) {
+                        this.endGame();
+                    }
+                }
+                
+                // Check checkpoints
+                this.checkpoints.forEach((checkpoint, index) => {
+                    const distance = this.playerVehicle.mesh.position.distanceTo(checkpoint.position);
+                    if (distance < 20 && index > this.currentCheckpoint) {
+                        this.currentCheckpoint = index;
+                    }
                 });
             }
             
@@ -1745,17 +1361,96 @@
                 return n + (s[(v - 20) % 10] || s[v] || s[0]);
             }
             
+            resetPlayer() {
+                if (this.playerVehicle) {
+                    this.playerVehicle.mesh.position.set(-10, 1, -180);
+                    this.playerVehicle.mesh.rotation.y = 0;
+                    this.playerVehicle.speed = 0;
+                    this.playerVehicle.rotation = 0;
+                    this.playerVehicle.boost = 100;
+                }
+            }
+            
+            togglePause() {
+                this.gameStarted = !this.gameStarted;
+                if (this.gameStarted) {
+                    this.animate();
+                }
+            }
+            
+            endGame() {
+                this.gameStarted = false;
+                
+                // Calculate final scores
+                const allVehicles = [
+                    { name: "Player", lap: this.playerLap - 1, position: this.playerPosition, color: '#00ff88' },
+                    ...this.bots.map((bot, i) => ({
+                        name: bot.name,
+                        lap: bot.lap,
+                        position: i + (i >= this.playerPosition - 1 ? 2 : 1),
+                        color: ['#ff3300', '#3366ff', '#33cc33', '#ffcc00', '#ff66cc', '#66ffff', '#ffff66'][i]
+                    }))
+                ];
+                
+                // Sort by lap then position
+                allVehicles.sort((a, b) => {
+                    if (b.lap !== a.lap) return b.lap - a.lap;
+                    return a.position - b.position;
+                });
+                
+                // Show end screen
+                const endScreen = document.getElementById('gameEndScreen');
+                const finalMessage = document.getElementById('finalMessage');
+                const finalScores = document.getElementById('finalScores');
+                
+                if (this.playerPosition === 1) {
+                    finalMessage.textContent = "🏆 VICTORY! 🏆";
+                } else if (this.playerPosition <= 3) {
+                    finalMessage.textContent = `PODIUM FINISH! ${this.getOrdinal(this.playerPosition)} Place`;
+                } else {
+                    finalMessage.textContent = `Finished ${this.getOrdinal(this.playerPosition)}`;
+                }
+                
+                // Display scores
+                finalScores.innerHTML = '<h3 style="margin: 20px 0; color: #ff9900;">FINAL RESULTS</h3>';
+                allVehicles.forEach((vehicle, index) => {
+                    const div = document.createElement('div');
+                    div.style.cssText = `
+                        padding: 10px 20px;
+                        margin: 5px 0;
+                        background: ${vehicle.position === 1 ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 255, 255, 0.1)'};
+                        border-radius: 5px;
+                        display: flex;
+                        align-items: center;
+                        border-left: 4px solid ${vehicle.color};
+                    `;
+                    
+                    div.innerHTML = `
+                        <div style="font-size: 1.2rem; font-weight: bold; margin-right: 20px; min-width: 30px;">
+                            ${index + 1}
+                        </div>
+                        <div style="flex: 1; font-size: 1.1rem;">${vehicle.name}</div>
+                        <div style="color: #ff9900; font-weight: bold;">
+                            ${vehicle.lap} Laps
+                        </div>
+                    `;
+                    
+                    finalScores.appendChild(div);
+                });
+                
+                endScreen.classList.add('show');
+            }
+            
             animate() {
                 if (!this.gameStarted) return;
                 
                 requestAnimationFrame(() => this.animate());
                 
                 const deltaTime = Math.min(this.clock.getDelta(), 0.1);
-                this.gameTime += deltaTime;
                 
                 // Update player
                 if (this.playerVehicle) {
-                    this.updatePlayerControls(deltaTime);
+                    this.updatePlayer(deltaTime);
                 }
                 
                 // Update bots
@@ -1763,14 +1458,8 @@
                     this.updateBotAI(bot, deltaTime);
                 });
                 
-                // Update HUD
-                this.updateHUD();
-                this.updateMiniMap();
-                
-                // Update controls
+                // Render
                 this.controls.update();
-                
-                // Render scene
                 this.renderer.render(this.scene, this.camera);
             }
             
@@ -1778,15 +1467,10 @@
                 this.camera.aspect = window.innerWidth / window.innerHeight;
                 this.camera.updateProjectionMatrix();
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
-                
-                // Update mini-map
-                this.miniMapCanvas.width = this.miniMap.clientWidth;
-                this.miniMapCanvas.height = this.miniMap.clientHeight;
-                this.updateMiniMap();
             }
         }
         
-        // Initialize game when page loads
+        // Initialize game
         window.game = new VehicleGame();
         
         // Global restart function
@@ -1802,8 +1486,6 @@
             document.getElementById('gameHUD').style.display = 'none';
             document.getElementById('speedometer').style.display = 'none';
             document.getElementById('controlsInfo').style.display = 'none';
-            document.getElementById('miniMap').style.display = 'none';
-            document.getElementById('lapCounter').style.display = 'none';
             
             // Reset selection
             document.querySelectorAll('.vehicle-card').forEach(card => {
