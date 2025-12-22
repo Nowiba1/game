@@ -2,36 +2,51 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cart Riders: Delivery Chaos - Final</title>
+    <title>METRO-TECH: Pro Subway Simulator</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: 'Arial Black', sans-serif; }
-        #gui { position: absolute; width: 100%; top: 0; padding: 20px; color: #fff; pointer-events: none; display: flex; justify-content: space-between; box-sizing: border-box; }
-        .stat-box { background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 5px; border-left: 5px solid #ffcc00; }
-        #speed-num { font-size: 40px; color: #00ffcc; }
-        #weather-tag { color: #ff9900; text-transform: uppercase; letter-spacing: 2px; }
-        #game-over { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); color: white; display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; }
-        button { padding: 20px 40px; font-size: 20px; background: #ffcc00; border: none; cursor: pointer; font-weight: bold; }
+        :root { --display: #00ffcc; --bg: #050505; }
+        body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'Consolas', monospace; }
+        #ui { position: absolute; inset: 0; pointer-events: none; color: var(--display); padding: 25px; }
+        
+        /* HUD ELEMENTS */
+        .glass-panel { background: rgba(0, 20, 20, 0.8); border: 1px solid var(--display); padding: 15px; border-radius: 4px; box-shadow: 0 0 15px rgba(0, 255, 204, 0.2); }
+        .speedometer { position: absolute; bottom: 40px; right: 40px; text-align: right; }
+        .speed-val { font-size: 72px; font-weight: bold; line-height: 0.8; }
+        .station-info { position: absolute; top: 40px; left: 50%; transform: translateX(-50%); text-align: center; width: 300px; }
+        
+        /* OVERLAYS */
+        .overlay { position: absolute; inset: 0; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; pointer-events: all; }
+        .btn { background: var(--display); color: #000; border: none; padding: 15px 40px; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 20px; }
+        .btn:hover { background: #fff; box-shadow: 0 0 20px var(--display); }
     </style>
 </head>
 <body>
 
-<div id="gui">
-    <div class="stat-box">
-        SCORE: <span id="score-val">0</span><br>
-        CARGO: <span id="cargo-val">100</span>%
-    </div>
-    <div id="speed-display"><span id="speed-num">0</span> KM/H</div>
-    <div class="stat-box" style="text-align:right">
-        TIME: <span id="weather-tag">MIDDAY</span><br>
-        BOTS: <span id="bot-count">0</span>
-    </div>
+<div id="boot-screen" class="overlay">
+    <h1 style="color:var(--display); font-size: 48px; letter-spacing: 10px;">METRO-TECH V1.0</h1>
+    <p style="color:rgba(255,255,255,0.5)">FULL SYSTEM 3D SUBWAY SIMULATOR</p>
+    <button class="btn" onclick="Game.init()">BOOT SYSTEM</button>
 </div>
 
-<div id="game-over">
-    <h1>DELIVERY FAILED</h1>
-    <h2 id="final-res"></h2>
-    <button onclick="location.reload()">RE-INITIATE</button>
+<div id="ui">
+    <div class="glass-panel station-info">
+        <div style="font-size: 10px; opacity: 0.7;">NEXT STATION</div>
+        <div id="station-name" style="font-size: 20px; font-weight: bold;">CENTRAL TERMINAL</div>
+        <div id="dist-text">DIST: 1200m</div>
+    </div>
+
+    <div class="glass-panel speedometer">
+        <div class="speed-val" id="speed-num">0</div>
+        <div style="font-size: 14px; letter-spacing: 3px;">KM/H</div>
+        <div id="brake-status" style="font-size: 10px; margin-top: 10px; color: #ff4444;">BRAKE: RELEASED</div>
+    </div>
+
+    <div style="position: absolute; bottom: 40px; left: 40px;" class="glass-panel">
+        <div>THRUST: <span id="thrust-val">0</span>%</div>
+        <div style="width: 150px; height: 10px; background: #111; margin-top: 5px;">
+            <div id="thrust-bar" style="width: 0%; height: 100%; background: var(--display);"></div>
+        </div>
+    </div>
 </div>
 
 <script type="importmap">
@@ -44,204 +59,157 @@
 </script>
 
 <script type="module">
-    import * as THREE from 'three';
-    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import * as THREE from 'three';
 
-    // --- GAME CONSTANTS ---
-    const LANE_WIDTH = 6; 
-    const ROAD_WIDTH = LANE_WIDTH * 3;
-    const SEGMENT_LEN = 100;
-    const BUILDING_W = 20;
+/**
+ * GAME ENGINE CORE
+ */
+const Game = {
+    params: {
+        tunnelRadius: 6,
+        segmentLength: 200,
+        maxSpeed: 120,
+        accelRate: 15,
+        friction: 0.992
+    },
+    state: {
+        speed: 0,
+        thrust: 0,
+        distToStation: 1500,
+        stationIdx: 0,
+        zPos: 0
+    },
 
-    let scene, camera, renderer, clock, playerGroup, sun;
-    let segments = [], buildings = [], bots = [];
-    let state = { speed: 0, lane: 0, score: 0, cargo: 100, time: 0 };
-    let inputs = { w: false, s: false, a: false, d: false };
+    init() {
+        document.getElementById('boot-screen').style.display = 'none';
+        this.setupScene();
+        this.createWorld();
+        this.setupInputs();
+        this.animate();
+    },
 
-    // --- PROCEDURAL ENGINE ---
-    function createBuildingMaterial() {
+    setupScene() {
+        this.scene = new THREE.Scene();
+        this.scene.fog = new THREE.FogExp2(0x000000, 0.02);
+        
+        this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(this.renderer.domElement);
+
+        // Train Headlights
+        this.headlight = new THREE.SpotLight(0xffffff, 100);
+        this.headlight.angle = Math.PI / 4;
+        this.headlight.penumbra = 0.5;
+        this.scene.add(this.headlight);
+        this.scene.add(this.headlight.target);
+    },
+
+    createWorld() {
+        this.tunnelGroup = new THREE.Group();
+        this.scene.add(this.tunnelGroup);
+        
+        // Procedural Tunnel Generation
+        for(let i=0; i<10; i++) {
+            this.spawnTunnelSegment(i * -this.params.segmentLength);
+        }
+
+        // Add Tracks
+        const trackGeo = new THREE.BoxGeometry(4, 0.2, 1000);
+        const trackMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.9 });
+        this.tracks = new THREE.Mesh(trackGeo, trackMat);
+        this.tracks.position.y = -4.5;
+        this.scene.add(this.tracks);
+    },
+
+    spawnTunnelSegment(z) {
+        const tunnelGeo = new THREE.CylinderGeometry(this.params.tunnelRadius, this.params.tunnelRadius, this.params.segmentLength, 32, 1, true);
+        tunnelGeo.rotateX(Math.PI / 2);
+        
+        // Concrete Texture Generation
         const canvas = document.createElement('canvas');
-        canvas.width = 512; canvas.height = 1024;
+        canvas.width = 512; canvas.height = 512;
         const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#151515'; ctx.fillRect(0,0,512,1024);
-        ctx.fillStyle = '#111';
-        for(let y=20; y<1000; y+=60) {
-            for(let x=20; x<480; x+=80) {
-                const lit = Math.random() > 0.8;
-                ctx.fillStyle = lit ? '#ffcc00' : '#050505';
-                ctx.fillRect(x, y, 40, 40);
-            }
-        }
-        return new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(canvas) });
-    }
-
-    // --- INITIALIZATION ---
-    async function init() {
-        scene = new THREE.Scene();
-        clock = new THREE.Clock();
+        ctx.fillStyle = '#222'; ctx.fillRect(0,0,512,512);
+        ctx.strokeStyle = '#333';
+        for(let i=0; i<512; i+=64) ctx.strokeRect(i,0,1,512);
         
-        camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 2000);
-        renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        document.body.appendChild(renderer.domElement);
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(1, 4);
 
-        sun = new THREE.DirectionalLight(0xffffff, 1);
-        scene.add(sun, new THREE.AmbientLight(0xffffff, 0.2));
+        const mat = new THREE.MeshStandardMaterial({ map: tex, side: THREE.BackSide });
+        const mesh = new THREE.Mesh(tunnelGeo, mat);
+        mesh.position.z = z;
+        this.tunnelGroup.add(mesh);
 
-        playerGroup = new THREE.Group();
-        await loadPlayer();
-        scene.add(playerGroup);
+        // Tunnel Lights
+        const light = new THREE.PointLight(0xffaa44, 50, 20);
+        light.position.set(0, 4, z);
+        this.tunnelGroup.add(light);
+    },
 
-        // Populate initial world
-        for(let i=0; i<10; i++) spawnSegment(i * -SEGMENT_LEN);
+    setupInputs() {
+        this.keys = {};
+        window.addEventListener('keydown', e => this.keys[e.key.toLowerCase()] = true);
+        window.addEventListener('keyup', e => this.keys[e.key.toLowerCase()] = false);
+    },
 
-        window.onkeydown = (e) => handleKey(e.key, true);
-        window.onkeyup = (e) => handleKey(e.key, false);
+    updatePhysics(dt) {
+        // Thrust & Braking
+        if(this.keys['w']) this.state.thrust = Math.min(100, this.state.thrust + 1);
+        else if(this.keys['s']) this.state.thrust = Math.max(0, this.state.thrust - 2);
         
-        loop();
-    }
-
-    async function loadPlayer() {
-        const loader = new GLTFLoader();
-        // Fallbacks
-        const cart = new THREE.Mesh(new THREE.BoxGeometry(2.5, 1.5, 4), new THREE.MeshStandardMaterial({color: 0xcccccc}));
-        const head = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1, 0.8), new THREE.MeshStandardMaterial({color: 0x333333}));
-
-        try { const g = await loader.loadAsync('models/cart1.glb'); playerGroup.add(g.scene); } catch { playerGroup.add(cart); }
-        
-        const char = new THREE.Group();
-        try { const g = await loader.loadAsync('models/player1.glb'); char.add(g.scene); } catch { char.add(head); }
-        
-        // Requirements: Seated INSIDE, facing away (see back of head)
-        char.position.set(0, -0.4, 0.8); 
-        playerGroup.add(char);
-        playerGroup.rotation.y = Math.PI / 4; // 45 degree tilt
-    }
-
-    function spawnSegment(z) {
-        const seg = new THREE.Group();
-        const road = new THREE.Mesh(new THREE.PlaneGeometry(ROAD_WIDTH+10, SEGMENT_LEN), new THREE.MeshStandardMaterial({color: 0x111111}));
-        road.rotateX(-Math.PI/2);
-        seg.add(road);
-
-        // Lane Markings
-        const lineGeo = new THREE.PlaneGeometry(0.4, SEGMENT_LEN);
-        lineGeo.rotateX(-Math.PI/2);
-        const l1 = new THREE.Mesh(lineGeo, new THREE.MeshBasicMaterial({color: 0x555555}));
-        l1.position.set(-LANE_WIDTH/2, 0.01, 0);
-        const l2 = l1.clone(); l2.position.x = LANE_WIDTH/2;
-        seg.add(l1, l2);
-
-        // Urban Density: Buildings close to each other
-        const mat = createBuildingMaterial();
-        for(let i=0; i<SEGMENT_LEN/BUILDING_W; i++) {
-            [-1, 1].forEach(side => {
-                const h = 40 + Math.random() * 80;
-                const b = new THREE.Mesh(new THREE.BoxGeometry(BUILDING_W, h, BUILDING_W), mat);
-                b.position.set(side * (ROAD_WIDTH/2 + BUILDING_W/2), h/2, (i * BUILDING_W) - SEGMENT_LEN/2);
-                seg.add(b);
-            });
+        if(this.keys[' ']) {
+            this.state.speed *= 0.95; // Emergency Brake
+            document.getElementById('brake-status').innerText = "BRAKE: ACTIVE";
+            document.getElementById('brake-status').style.color = "#00ffcc";
+        } else {
+            this.state.speed += (this.state.thrust / 100) * this.params.accelRate * dt;
+            this.state.speed *= this.params.friction;
+            document.getElementById('brake-status').innerText = "BRAKE: RELEASED";
+            document.getElementById('brake-status').style.color = "#ff4444";
         }
 
-        seg.position.z = z;
-        scene.add(seg);
-        segments.push(seg);
-    }
+        this.state.zPos -= (this.state.speed * 0.5) * dt;
+        this.state.distToStation -= (this.state.speed * 0.1) * dt;
 
-    function updateWeather(dt) {
-        state.time += dt * 0.1;
-        const cycle = (Math.sin(state.time) + 1) / 2;
-        
-        let color, label;
-        if(cycle < 0.2) { color = 0x050510; label = "Midnight"; sun.intensity = 0.1; }
-        else if(cycle < 0.4) { color = 0xff6600; label = "Sunrise"; sun.intensity = 0.8; }
-        else if(cycle < 0.7) { color = 0x87ceeb; label = "Midday"; sun.intensity = 1.2; }
-        else { color = 0xff4400; label = "Sunset"; sun.intensity = 0.6; }
+        // Reset Dist if station reached
+        if(this.state.distToStation < 0) this.state.distToStation = 2500;
+    },
 
-        scene.background = new THREE.Color(color);
-        scene.fog = new THREE.FogExp2(color, 0.007);
-        document.getElementById('weather-tag').innerText = label;
-        sun.color.setHex(color);
-    }
+    animate() {
+        requestAnimationFrame(() => this.animate());
+        const dt = 0.016; // Fixed step for stability
 
-    function loop() {
-        requestAnimationFrame(loop);
-        const dt = clock.getDelta();
-        updateWeather(dt);
+        this.updatePhysics(dt);
 
-        // Physics
-        if(inputs.w) state.speed = THREE.MathUtils.lerp(state.speed, 100, dt * 1);
-        else if(inputs.s) state.speed = THREE.MathUtils.lerp(state.speed, -20, dt * 2);
-        else state.speed = THREE.MathUtils.lerp(state.speed, 40, dt * 0.4);
+        // Camera POV: Driver Seat
+        this.camera.position.set(0, 0, this.state.zPos);
+        this.headlight.position.set(0, 0, this.state.zPos);
+        this.headlight.target.position.set(0, 0, this.state.zPos - 50);
 
-        // Lane Snap
-        const targetX = state.lane * LANE_WIDTH;
-        playerGroup.position.x = THREE.MathUtils.lerp(playerGroup.position.x, targetX, dt * 7);
-        playerGroup.position.z -= state.speed * dt;
-        state.score += Math.floor(state.speed * dt * 0.1);
-
-        // Camera Follow (Back of head + Handlebar view)
-        const camPos = new THREE.Vector3(playerGroup.position.x * 0.7, 5, playerGroup.position.z + 9);
-        camera.position.lerp(camPos, 0.1);
-        camera.lookAt(playerGroup.position.x, 2, playerGroup.position.z - 40);
-
-        // Recycling
-        if(playerGroup.position.z < segments[1].position.z) {
-            const old = segments.shift();
-            old.position.z -= SEGMENT_LEN * segments.length;
-            spawnBot(old.position.z);
-            segments.push(old);
-        }
-
-        updateBots(dt);
-        updateUI();
-        renderer.render(scene, camera);
-    }
-
-    function spawnBot(z) {
-        if(Math.random() > 0.5) {
-            const bot = new THREE.Mesh(new THREE.BoxGeometry(2, 1, 3), new THREE.MeshStandardMaterial({color: 0xff0000}));
-            bot.position.set((Math.floor(Math.random()*3)-1)*LANE_WIDTH, 1, z - 200);
-            scene.add(bot);
-            bots.push(bot);
-        }
-    }
-
-    function updateBots(dt) {
-        bots.forEach((b, i) => {
-            b.position.z += (state.speed * 0.2) * dt; // Ambient traffic moves slower
-            if(b.position.distanceTo(playerGroup.position) < 3) {
-                state.cargo -= 5;
-                b.position.z -= 50; // Bounce
-            }
-            if(b.position.z > playerGroup.position.z + 50) {
-                scene.remove(b);
-                bots.splice(i, 1);
+        // Infinite Tunnel Loop
+        this.tunnelGroup.children.forEach(seg => {
+            if(seg.position.z > this.state.zPos + 50) {
+                seg.position.z -= 10 * this.params.segmentLength;
             }
         });
-    }
 
-    function handleKey(key, isDown) {
-        const k = key.toLowerCase();
-        if(k === 'w') inputs.w = isDown;
-        if(k === 's') inputs.s = isDown;
-        if(k === 'a' && isDown) state.lane = Math.max(-1, state.lane - 1);
-        if(k === 'd' && isDown) state.lane = Math.min(1, state.lane + 1);
-    }
+        this.tracks.position.z = this.state.zPos - 500;
 
-    function updateUI() {
-        document.getElementById('score-val').innerText = state.score;
-        document.getElementById('cargo-val').innerText = Math.max(0, state.cargo);
-        document.getElementById('speed-num').innerText = Math.floor(state.speed);
-        document.getElementById('bot-count').innerText = bots.length;
-        if(state.cargo <= 0) {
-            document.getElementById('game-over').style.display = 'flex';
-            document.getElementById('final-res').innerText = "SCORE: " + state.score;
-        }
-    }
+        // UI SYNC
+        document.getElementById('speed-num').innerText = Math.floor(this.state.speed);
+        document.getElementById('thrust-val').innerText = Math.floor(this.state.thrust);
+        document.getElementById('thrust-bar').style.width = this.state.thrust + "%";
+        document.getElementById('dist-text').innerText = `DIST: ${Math.floor(this.state.distToStation)}m`;
 
-    init();
+        this.renderer.render(this.scene, this.camera);
+    }
+};
+
+window.Game = Game;
 </script>
 </body>
 </html>
