@@ -5,40 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cart Riders: Delivery Chaos</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #111; font-family: 'Courier New', Courier, monospace; }
-        #ui-layer {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; padding: 20px; box-sizing: border-box;
-            display: flex; flex-direction: column; justify-content: space-between;
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Arial Black', sans-serif; }
+        #ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .stats { position: absolute; top: 20px; left: 20px; color: #0f0; font-size: 20px; text-shadow: 2px 2px #000; }
+        #speed-o { position: absolute; bottom: 30px; right: 30px; color: #fff; font-size: 40px; text-align: right; }
+        #start-screen { 
+            position: absolute; width: 100%; height: 100%; background: #000; 
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            color: #ffcc00; z-index: 100; pointer-events: all;
         }
-        .hud-top { display: flex; justify-content: space-between; color: #0f0; font-size: 24px; text-shadow: 2px 2px #000; }
-        .hud-bottom { color: #f00; font-size: 18px; }
-        #game-over {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.9); color: white; padding: 50px; text-align: center;
-            border: 4px solid #f00; display: none; pointer-events: all;
+        #game-over { 
+            position: absolute; width: 100%; height: 100%; background: rgba(255,0,0,0.3); 
+            display: none; justify-content: center; align-items: center; flex-direction: column; color: white;
         }
-        #speedometer { font-size: 48px; color: #fff; }
+        button { padding: 15px 40px; font-size: 20px; cursor: pointer; background: #ffcc00; border: none; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div id="ui-layer">
-    <div class="hud-top">
-        <div>SCORE: <span id="score-val">0</span></div>
-        <div id="speedometer"><span id="speed-num">0</span> <small>KM/H</small></div>
-        <div>CARGO: <span id="cargo-val">100</span>%</div>
+<div id="start-screen">
+    <h1>CART RIDERS: DELIVERY CHAOS</h1>
+    <p>3 LANES. NO BRAKES. TOTAL CHAOS.</p>
+    <button id="start-btn">START DELIVERY</button>
+</div>
+
+<div id="ui">
+    <div class="stats">
+        SCORE: <span id="score">0</span><br>
+        CARGO: <span id="cargo">10</span>/10<br>
+        BOTS: <span id="bots">0</span>
     </div>
-    <div class="hud-bottom">
-        <div>BOTS ACTIVE: <span id="bot-count">0</span></div>
-    </div>
+    <div id="speed-o"><span id="kmh">0</span> KM/H</div>
 </div>
 
 <div id="game-over">
-    <h1>TOTAL CHAOS - WASTED</h1>
-    <p>Your delivery was intercepted.</p>
+    <h1>DELIVERY FAILED</h1>
     <h2 id="final-score"></h2>
-    <button onclick="location.reload()" style="padding: 15px 30px; cursor: pointer; font-weight: bold;">RE-SHIPPING</button>
+    <button onclick="location.reload()">TRY AGAIN</button>
 </div>
 
 <script type="importmap">
@@ -55,229 +58,216 @@
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
     // --- GAME CONSTANTS ---
-    const LANE_WIDTH = 4.5;
-    const ROAD_SEGMENT_LENGTH = 100;
-    const VISIBILITY_DISTANCE = 8; // Number of segments ahead
-    const MAX_CARGO = 100;
-
-    // --- STATE MANAGEMENT ---
-    let scene, camera, renderer, clock, playerGroup;
+    const LANE_WIDTH = 4;
+    const SEGMENT_SIZE = 60;
+    const VISIBLE_SEGMENTS = 10;
+    
+    let scene, camera, renderer, clock, player;
     let roadSegments = [];
     let buildings = [];
-    let bots = [];
-    let gameActive = true;
-    let score = 0;
-    let cargo = MAX_CARGO;
-    let currentLane = 0; // -1 (Left), 0 (Mid), 1 (Right)
-    let targetX = 0;
-    let forwardSpeed = 0;
+    let activeBots = [];
+    let isRunning = false;
     
-    const input = { left: false, right: false, accel: false, brake: false, boost: false };
-    const loader = new GLTFLoader();
+    // Player State
+    let state = {
+        speed: 0,
+        lane: 0, // -1, 0, 1
+        targetX: 0,
+        cargo: 10,
+        score: 0,
+        lastBotScore: 0
+    };
 
-    // --- PROCEDURAL TEXTURE GENERATOR ---
-    function createBuildingMaterial() {
+    const inputs = { w: false, s: false, a: false, d: false };
+
+    // --- TEXTURE ENGINE ---
+    function createBuildingTex() {
         const canvas = document.createElement('canvas');
-        canvas.width = 512; canvas.height = 512;
+        canvas.width = 256; canvas.height = 512;
         const ctx = canvas.getContext('2d');
-        
-        // Random Wall Color
-        ctx.fillStyle = `rgb(${50 + Math.random()*50}, ${50 + Math.random()*50}, ${50 + Math.random()*50})`;
-        ctx.fillRect(0, 0, 512, 512);
-
-        // Windows
-        ctx.fillStyle = '#111';
-        for(let i=40; i<480; i+=80) {
-            for(let j=20; j<500; j+=60) {
-                if(Math.random() > 0.1) ctx.fillRect(i, j, 40, 40);
-                if(Math.random() > 0.9) { // Light in window
-                    ctx.fillStyle = '#ffeeaa';
-                    ctx.fillRect(i+5, j+5, 30, 30);
-                    ctx.fillStyle = '#111';
-                }
+        ctx.fillStyle = '#333'; ctx.fillRect(0, 0, 256, 512);
+        ctx.fillStyle = '#555'; // Window grid
+        for(let y=20; y<512; y+=40) {
+            for(let x=20; x<256; x+=50) {
+                ctx.fillStyle = Math.random() > 0.1 ? '#111' : '#ffaa00';
+                ctx.fillRect(x, y, 30, 30);
             }
         }
-        const tex = new THREE.CanvasTexture(canvas);
-        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-        return new THREE.MeshStandardMaterial({ map: tex });
+        return new THREE.CanvasTexture(canvas);
     }
 
-    // --- INITIALIZATION ---
+    // --- CORE SETUP ---
     async function init() {
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x050505);
-        scene.fog = new THREE.FogExp2(0x050505, 0.008);
+        scene.background = new THREE.Color(0x0a0a0a);
+        scene.fog = new THREE.FogExp2(0x0a0a0a, 0.015);
 
-        camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
-        
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
         document.body.appendChild(renderer.domElement);
 
-        const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
-        scene.add(light);
+        const sun = new THREE.DirectionalLight(0xffffff, 1.5);
+        sun.position.set(10, 20, 10);
+        scene.add(sun, new THREE.AmbientLight(0x404040));
 
-        // Player Setup
-        playerGroup = new THREE.Group();
-        scene.add(playerGroup);
+        player = new THREE.Group();
+        scene.add(player);
 
-        await loadModels();
-        setupControls();
+        await loadAssets();
         
-        // Spawn initial road
-        for(let i=0; i<VISIBILITY_DISTANCE; i++) {
-            spawnRoadSegment(i * -ROAD_SEGMENT_LENGTH);
+        // Initial Road
+        for(let i=0; i<VISIBLE_SEGMENTS; i++) {
+            generateSegment(i * -SEGMENT_SIZE);
         }
 
+        window.addEventListener('keydown', (e) => updateKey(e, true));
+        window.addEventListener('keyup', (e) => updateKey(e, false));
+        
         clock = new THREE.Clock();
-        update();
+        animate();
     }
 
-    async function loadModels() {
-        // We load the player and cart as a nested group
-        const loadModel = (path) => new Promise(res => loader.load(path, (g) => res(g.scene), undefined, () => res(new THREE.Group())));
+    async function loadAssets() {
+        const loader = new GLTFLoader();
+        const box = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1, 2.5), new THREE.MeshStandardMaterial({color: 0x555555}));
+        const man = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.2, 0.6), new THREE.MeshStandardMaterial({color: 0xffdbac}));
         
-        const cart = await loadModel('models/cart1.glb');
-        const driver = await loadModel('models/player1.glb');
-        
-        // Position driver in cart
-        driver.position.set(0, 0.5, 0);
-        playerGroup.add(cart);
-        playerGroup.add(driver);
-        
-        // 45 degree rotation requirement
-        playerGroup.rotation.y = Math.PI / 4; 
+        // TRY LOAD MODELS
+        try {
+            const cartData = await loader.loadAsync('models/cart1.glb');
+            player.add(cartData.scene);
+        } catch(e) { player.add(box); } // Fallback to box if models/ folder missing
+
+        try {
+            const manData = await loader.loadAsync('models/player1.glb');
+            player.add(manData.scene);
+            manData.scene.position.y = 0.5;
+        } catch(e) { player.add(man); man.position.y = 0.5; }
+
+        player.rotation.y = Math.PI / 4; // 45 degree tilt
     }
 
-    // --- ROAD LOGIC ---
-    function spawnRoadSegment(zPos) {
-        const geo = new THREE.PlaneGeometry(LANE_WIDTH * 3.5, ROAD_SEGMENT_LENGTH, 1, 10);
-        geo.rotateX(-Math.PI / 2);
+    function generateSegment(zPos) {
+        const group = new THREE.Group();
         
-        // Add "Dips and Bumps" to vertices
-        const pos = geo.attributes.position;
+        // Road surface
+        const roadGeo = new THREE.PlaneGeometry(LANE_WIDTH * 3, SEGMENT_SIZE, 1, 5);
+        roadGeo.rotateX(-Math.PI/2);
+        
+        // Create Dips/Bumps
+        const pos = roadGeo.attributes.position;
+        const elevation = (Math.random() - 0.5) * 4;
         for(let i=0; i<pos.count; i++) {
-            const y = Math.sin(pos.getZ(i) * 0.05) * 1.5;
-            pos.setY(i, y);
+            if(pos.getZ(i) < -SEGMENT_SIZE/2) pos.setY(i, elevation);
         }
 
-        const mat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 });
-        const mesh = new THREE.Mesh(geo, mat);
-        mesh.position.z = zPos;
-        scene.add(mesh);
-        roadSegments.push(mesh);
+        const road = new THREE.Mesh(roadGeo, new THREE.MeshStandardMaterial({color: 0x111111}));
+        group.add(road);
 
-        // Spawn Buildings
-        spawnBuildingsAt(zPos);
+        // Lane markings
+        const lineGeo = new THREE.PlaneGeometry(0.2, SEGMENT_SIZE);
+        lineGeo.rotateX(-Math.PI/2);
+        const lineMat = new THREE.MeshBasicMaterial({color: 0xffffff});
+        const l1 = new THREE.Mesh(lineGeo, lineMat); l1.position.set(-LANE_WIDTH/2, 0.05, 0);
+        const l2 = new THREE.Mesh(lineGeo, lineMat); l2.position.set(LANE_WIDTH/2, 0.05, 0);
+        group.add(l1, l2);
+
+        group.position.z = zPos;
+        scene.add(group);
+        roadSegments.push({mesh: group, elevation: elevation});
+
+        // Building on sides
+        spawnBuilding(zPos);
     }
 
-    function spawnBuildingsAt(zPos) {
-        const sides = [-15, 15];
-        sides.forEach(x => {
-            const h = 10 + Math.random() * 30;
-            const geo = new THREE.BoxGeometry(10, h, 10);
-            const mesh = new THREE.Mesh(geo, createBuildingMaterial());
-            mesh.position.set(x, h/2, zPos + (Math.random() - 0.5) * 50);
-            scene.add(mesh);
-            buildings.push(mesh);
-        });
+    function spawnBuilding(z) {
+        const h = 15 + Math.random() * 30;
+        const geo = new THREE.BoxGeometry(10, h, 10);
+        const mat = new THREE.MeshStandardMaterial({map: createBuildingTex()});
+        const b = new THREE.Mesh(geo, mat);
+        b.position.set(Math.random() > 0.5 ? 15 : -15, h/2, z);
+        scene.add(b);
+        buildings.push(b);
     }
 
-    // --- CORE GAME LOOP ---
-    function update() {
-        if(!gameActive) return;
-        requestAnimationFrame(update);
+    // --- GAMEPLAY LOGIC ---
+    function updateKey(e, val) {
+        if(e.key.toLowerCase() === 'a') { if(val && state.lane > -1) state.lane--; }
+        if(e.key.toLowerCase() === 'd') { if(val && state.lane < 1) state.lane++; }
+        if(e.key.toLowerCase() === 'w') inputs.w = val;
+        if(e.key.toLowerCase() === 's') inputs.s = val;
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        if(!isRunning) return;
+
         const dt = clock.getDelta();
+        
+        // Physics
+        if(inputs.w) state.speed = THREE.MathUtils.lerp(state.speed, 60, dt * 1);
+        else if(inputs.s) state.speed = THREE.MathUtils.lerp(state.speed, -10, dt * 3);
+        else state.speed = THREE.MathUtils.lerp(state.speed, 20, dt * 0.5);
 
-        // 1. Physics & Movement
-        if(input.accel) forwardSpeed = THREE.MathUtils.lerp(forwardSpeed, 80, dt * 0.5);
-        else if(input.brake) forwardSpeed = THREE.MathUtils.lerp(forwardSpeed, 0, dt * 2);
-        else forwardSpeed = THREE.MathUtils.lerp(forwardSpeed, 30, dt * 0.2);
+        player.position.z -= state.speed * dt;
+        state.targetX = state.lane * LANE_WIDTH;
+        player.position.x = THREE.MathUtils.lerp(player.position.x, state.targetX, dt * 8);
 
-        // Lane Logic
-        targetX = currentLane * LANE_WIDTH;
-        playerGroup.position.x = THREE.MathUtils.lerp(playerGroup.position.x, targetX, dt * 5);
-        playerGroup.position.z -= forwardSpeed * dt;
-
-        // 2. Camera Follow
-        const camTarget = new THREE.Vector3(playerGroup.position.x * 0.5, 5, playerGroup.position.z + 12);
-        camera.position.lerp(camTarget, dt * 3);
-        camera.lookAt(playerGroup.position.x, 2, playerGroup.position.z - 20);
-
-        // 3. Endless Road Cycling
-        if(playerGroup.position.z < roadSegments[1].position.z) {
-            const first = roadSegments.shift();
-            first.position.z -= ROAD_SEGMENT_LENGTH * VISIBILITY_DISTANCE;
-            roadSegments.push(first);
-            score += 100;
-            checkDifficulty();
+        // Score & AI Scaling
+        state.score += Math.floor(state.speed * dt);
+        if(state.score - state.lastBotScore > 1000) {
+            spawnBot();
+            state.lastBotScore = state.score;
         }
 
-        // 4. AI & Collisions
+        // Road Recycling
+        if(player.position.z < roadSegments[1].mesh.position.z) {
+            const old = roadSegments.shift();
+            scene.remove(old.mesh);
+            generateSegment(roadSegments[roadSegments.length-1].mesh.position.z - SEGMENT_SIZE);
+        }
+
+        // Camera
+        camera.position.lerp(new THREE.Vector3(player.position.x * 0.5, 6, player.position.z + 10), dt * 5);
+        camera.lookAt(player.position.x, 2, player.position.z - 20);
+
         updateBots(dt);
         updateUI();
-    }
-
-    function updateBots(dt) {
-        bots.forEach((bot, index) => {
-            bot.position.z -= (forwardSpeed + 5) * dt; // Bots slightly faster to chase
-            bot.position.x = THREE.MathUtils.lerp(bot.position.x, playerGroup.position.x, dt * 0.8);
-            
-            // Collision
-            if(bot.position.distanceTo(playerGroup.position) < 2.5) {
-                cargo -= 5;
-                bot.position.z += 10; // Knockback
-                cameraShake();
-            }
-        });
-    }
-
-    function checkDifficulty() {
-        const threshold = Math.floor(score / 2000);
-        if(threshold > bots.length) {
-            spawnBot();
-        }
+        renderer.render(scene, camera);
     }
 
     function spawnBot() {
-        const bot = new THREE.Mesh(new THREE.BoxGeometry(2, 1.5, 3), new THREE.MeshStandardMaterial({color: 0xff0000}));
-        bot.position.set((Math.random()-0.5)*10, 1, playerGroup.position.z - 150);
+        const bot = new THREE.Mesh(new THREE.BoxGeometry(2, 1, 2), new THREE.MeshStandardMaterial({color: 0xff0000}));
+        bot.position.set((Math.random()-0.5)*10, 0.5, player.position.z - 100);
         scene.add(bot);
-        bots.push(bot);
+        activeBots.push(bot);
     }
 
-    // --- UTILS ---
-    function setupControls() {
-        window.onkeydown = (e) => {
-            if(e.key === 'a' || e.key === 'ArrowLeft') currentLane = Math.max(-1, currentLane - 1);
-            if(e.key === 'd' || e.key === 'ArrowRight') currentLane = Math.min(1, currentLane + 1);
-            if(e.key === 'w' || e.key === 'ArrowUp') input.accel = true;
-            if(e.key === 's' || e.key === 'ArrowDown') input.brake = true;
-        };
-        window.onkeyup = (e) => {
-            if(e.key === 'w' || e.key === 'ArrowUp') input.accel = false;
-            if(e.key === 's' || e.key === 'ArrowDown') input.brake = false;
-        };
+    function updateBots(dt) {
+        activeBots.forEach((bot, i) => {
+            bot.position.z -= (state.speed + 10) * dt;
+            bot.position.x = THREE.MathUtils.lerp(bot.position.x, player.position.x, dt * 0.5);
+            
+            if(bot.position.distanceTo(player.position) < 2.5) {
+                state.cargo--;
+                bot.position.z -= 20; 
+                if(state.cargo <= 0) { isRunning = false; document.getElementById('game-over').style.display='flex'; }
+            }
+        });
     }
 
     function updateUI() {
-        document.getElementById('score-val').innerText = score;
-        document.getElementById('speed-num').innerText = Math.floor(forwardSpeed);
-        document.getElementById('cargo-val').innerText = Math.max(0, cargo);
-        document.getElementById('bot-count').innerText = bots.length;
-        
-        if(cargo <= 0 && gameActive) {
-            gameActive = false;
-            document.getElementById('game-over').style.display = 'block';
-            document.getElementById('final-score').innerText = "FINAL SCORE: " + score;
-        }
+        document.getElementById('score').innerText = state.score;
+        document.getElementById('kmh').innerText = Math.floor(state.speed);
+        document.getElementById('cargo').innerText = state.cargo;
+        document.getElementById('bots').innerText = activeBots.length;
     }
 
-    function cameraShake() {
-        const originalY = camera.position.y;
-        camera.position.y += Math.random() - 0.5;
-    }
+    document.getElementById('start-btn').onclick = () => {
+        document.getElementById('start-screen').style.display = 'none';
+        isRunning = true;
+    };
 
     init();
 </script>
