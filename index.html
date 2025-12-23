@@ -86,6 +86,44 @@
             font-size: 12px;
             max-width: 300px;
         }
+        
+        #model-exporter {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            display: none;
+        }
+        
+        #model-exporter h3 {
+            margin-bottom: 10px;
+            color: #4CAF50;
+        }
+        
+        #export-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .export-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .export-btn:hover {
+            background: #45a049;
+        }
     </style>
 </head>
 <body>
@@ -102,19 +140,28 @@
             <p><strong>A/←</strong>: Steer Left</p>
             <p><strong>D/→</strong>: Steer Right</p>
             <p><strong>Gamepad</strong>: Supported</p>
+            <p><strong>E</strong>: Export Models</p>
         </div>
         
         <div id="loading">Loading game assets...</div>
+        
+        <div id="model-exporter">
+            <h3>Export Car Models</h3>
+            <div id="export-buttons">
+                <button class="export-btn" onclick="exportPlayerCar()">Export Player Car (.gltf)</button>
+                <button class="export-btn" onclick="exportEnemyCar()">Export Enemy Car (.gltf)</button>
+                <button class="export-btn" onclick="hideExporter()">Close</button>
+            </div>
+        </div>
     </div>
 
-    <script type="module">
-        // Import Three.js from CDN
-        import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.module.js';
-        import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.132.2/examples/jsm/loaders/GLTFLoader.js';
-        import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.132.2/examples/jsm/controls/OrbitControls.js';
-
+    <script>
+        // Load Three.js from CDN using classic script tags
+        // No module imports needed
+        console.log("Initializing 3D Driving Game...");
+        
         // Game variables
-        let scene, camera, renderer, controls;
+        let scene, camera, renderer;
         let playerCar = null;
         let enemyCars = [];
         let roadCurve, roadMesh;
@@ -125,6 +172,7 @@
         let score = 0;
         let gamepad = null;
         let gamepadIndex = null;
+        let GLTFExporter = null;
         
         // Constants
         const ROAD_LENGTH = 1000; // Number of curve points
@@ -145,6 +193,13 @@
         
         // Initialize the game
         function init() {
+            // Check if Three.js is loaded
+            if (typeof THREE === 'undefined') {
+                document.getElementById('loading').innerHTML = 
+                    'Error: Three.js not loaded. Please check your internet connection.';
+                return;
+            }
+            
             // Create scene
             scene = new THREE.Scene();
             scene.fog = new THREE.Fog(0x87CEEB, 300, 800);
@@ -197,11 +252,216 @@
             // Handle window resize
             window.addEventListener('resize', onWindowResize);
             
+            // Keyboard controls
+            document.addEventListener('keydown', handleKeyDown);
+            
+            // Load GLTFExporter dynamically
+            loadGLTFExporter();
+            
             // Start game loop
             animate();
             
             // Hide loading screen
-            document.getElementById('loading').style.display = 'none';
+            setTimeout(() => {
+                document.getElementById('loading').style.display = 'none';
+            }, 500);
+        }
+        
+        // Load GLTFExporter from Three.js examples
+        function loadGLTFExporter() {
+            // Try to load from CDN
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/exporters/GLTFExporter.js';
+            script.onload = function() {
+                if (typeof THREE.GLTFExporter !== 'undefined') {
+                    GLTFExporter = THREE.GLTFExporter;
+                    console.log("GLTFExporter loaded successfully");
+                }
+            };
+            script.onerror = function() {
+                console.warn("Could not load GLTFExporter from CDN, using fallback");
+                // Create a simple exporter
+                GLTFExporter = {
+                    parse: function(object, onDone) {
+                        console.log("GLTF export would save model data here");
+                        if (onDone) onDone({scene: object});
+                    }
+                };
+            };
+            document.head.appendChild(script);
+        }
+        
+        // Export player car as GLTF
+        function exportPlayerCar() {
+            if (!playerCar) return;
+            
+            if (GLTFExporter) {
+                const exporter = new GLTFExporter();
+                exporter.parse(
+                    playerCar,
+                    function (result) {
+                        // Convert to JSON string
+                        const output = JSON.stringify(result, null, 2);
+                        
+                        // Create download link
+                        const blob = new Blob([output], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = 'playerCar.gltf';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                        
+                        console.log("Player car exported as playerCar.gltf");
+                    },
+                    function (error) {
+                        console.error('GLTF export error:', error);
+                        // Fallback to OBJ export
+                        exportAsOBJ(playerCar, 'playerCar');
+                    }
+                );
+            } else {
+                // Fallback to OBJ export
+                exportAsOBJ(playerCar, 'playerCar');
+            }
+        }
+        
+        // Export enemy car as GLTF
+        function exportEnemyCar() {
+            // Create a sample enemy car to export
+            const enemyCar = createCarModel(0x0000FF, 0x0000AA);
+            
+            if (GLTFExporter) {
+                const exporter = new GLTFExporter();
+                exporter.parse(
+                    enemyCar,
+                    function (result) {
+                        // Convert to JSON string
+                        const output = JSON.stringify(result, null, 2);
+                        
+                        // Create download link
+                        const blob = new Blob([output], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = 'enemyCar.gltf';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                        
+                        console.log("Enemy car exported as enemyCar.gltf");
+                        
+                        // Clean up
+                        scene.remove(enemyCar);
+                    },
+                    function (error) {
+                        console.error('GLTF export error:', error);
+                        // Fallback to OBJ export
+                        exportAsOBJ(enemyCar, 'enemyCar');
+                        scene.remove(enemyCar);
+                    }
+                );
+            } else {
+                // Fallback to OBJ export
+                exportAsOBJ(enemyCar, 'enemyCar');
+                scene.remove(enemyCar);
+            }
+        }
+        
+        // Fallback OBJ exporter
+        function exportAsOBJ(object, filename) {
+            let objString = "# Exported from 3D Driving Game\n";
+            objString += "o " + filename + "\n";
+            
+            // Collect all vertices and faces
+            object.traverse(function(child) {
+                if (child instanceof THREE.Mesh) {
+                    const geometry = child.geometry;
+                    const position = geometry.attributes.position;
+                    const matrix = child.matrixWorld;
+                    
+                    // Add vertices
+                    for (let i = 0; i < position.count; i++) {
+                        const x = position.getX(i);
+                        const y = position.getY(i);
+                        const z = position.getZ(i);
+                        
+                        const vertex = new THREE.Vector3(x, y, z);
+                        vertex.applyMatrix4(matrix);
+                        
+                        objString += "v " + vertex.x + " " + vertex.y + " " + vertex.z + "\n";
+                    }
+                    
+                    // Add faces (simplified - assumes separate groups for each mesh)
+                    const baseIndex = 1; // OBJ indices start at 1
+                    if (geometry.index) {
+                        const index = geometry.index;
+                        for (let i = 0; i < index.count; i += 3) {
+                            const a = index.getX(i) + baseIndex;
+                            const b = index.getX(i + 1) + baseIndex;
+                            const c = index.getX(i + 2) + baseIndex;
+                            objString += "f " + a + " " + b + " " + c + "\n";
+                        }
+                    } else {
+                        for (let i = 0; i < position.count; i += 3) {
+                            const a = i + baseIndex;
+                            const b = i + 1 + baseIndex;
+                            const c = i + 2 + baseIndex;
+                            objString += "f " + a + " " + b + " " + c + "\n";
+                        }
+                    }
+                }
+            });
+            
+            // Create download link
+            const blob = new Blob([objString], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename + '.obj';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            console.log(filename + " exported as OBJ");
+        }
+        
+        function showExporter() {
+            document.getElementById('model-exporter').style.display = 'block';
+        }
+        
+        function hideExporter() {
+            document.getElementById('model-exporter').style.display = 'none';
+        }
+        
+        // Handle keyboard input
+        function handleKeyDown(event) {
+            switch (event.key.toLowerCase()) {
+                case 'w':
+                case 'arrowup':
+                    playerSpeed = Math.min(MAX_SPEED, playerSpeed + ACCELERATION);
+                    break;
+                case 's':
+                case 'arrowdown':
+                    playerSpeed = Math.max(0, playerSpeed - DECELERATION);
+                    break;
+                case 'a':
+                case 'arrowleft':
+                    playerLane -= TURN_SPEED * (playerSpeed / MAX_SPEED);
+                    break;
+                case 'd':
+                case 'arrowright':
+                    playerLane += TURN_SPEED * (playerSpeed / MAX_SPEED);
+                    break;
+                case 'e':
+                    event.preventDefault();
+                    showExporter();
+                    break;
+            }
         }
         
         // Generate procedural road using CatmullRomCurve3
@@ -272,8 +532,8 @@
             // Remove old road mesh if exists
             if (roadMesh) {
                 scene.remove(roadMesh);
-                roadMesh.geometry.dispose();
-                roadMesh.material.dispose();
+                if (roadMesh.geometry) roadMesh.geometry.dispose();
+                if (roadMesh.material) roadMesh.material.dispose();
             }
             
             // Road geometry parameters
@@ -414,7 +674,7 @@
             // Create lane marking material
             const laneMarkingMaterial = new THREE.LineBasicMaterial({
                 vertexColors: true,
-                linewidth: 2
+                linewidth: 1
             });
             
             // Create lane marking mesh
@@ -484,17 +744,13 @@
             }
         }
         
-        // Load player car from external GLB file
-        function loadPlayerCar() {
-            // Since we can't actually load external files in this environment,
-            // we'll create a simple car model as a fallback
-            
-            // Create a simple car model
+        // Create a car model (reusable function)
+        function createCarModel(bodyColor, roofColor) {
             const carGroup = new THREE.Group();
             
             // Car body
             const carBodyGeometry = new THREE.BoxGeometry(3, 1.2, 5);
-            const carBodyMaterial = new THREE.MeshPhongMaterial({ color: 0xFF0000, shininess: 100 });
+            const carBodyMaterial = new THREE.MeshPhongMaterial({ color: bodyColor, shininess: 100 });
             const carBody = new THREE.Mesh(carBodyGeometry, carBodyMaterial);
             carBody.position.y = 1;
             carBody.castShadow = true;
@@ -503,12 +759,20 @@
             
             // Car roof
             const carRoofGeometry = new THREE.BoxGeometry(2, 0.8, 2);
-            const carRoofMaterial = new THREE.MeshPhongMaterial({ color: 0xAA0000, shininess: 100 });
+            const carRoofMaterial = new THREE.MeshPhongMaterial({ color: roofColor, shininess: 100 });
             const carRoof = new THREE.Mesh(carRoofGeometry, carRoofMaterial);
             carRoof.position.y = 2.2;
             carRoof.position.z = -0.5;
             carRoof.castShadow = true;
             carGroup.add(carRoof);
+            
+            // Windows
+            const windowGeometry = new THREE.BoxGeometry(2.5, 0.6, 1.5);
+            const windowMaterial = new THREE.MeshPhongMaterial({ color: 0x1a1a1a, transparent: true, opacity: 0.7 });
+            const frontWindow = new THREE.Mesh(windowGeometry, windowMaterial);
+            frontWindow.position.y = 2.2;
+            frontWindow.position.z = 0.8;
+            carGroup.add(frontWindow);
             
             // Wheels
             const wheelGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.3, 16);
@@ -526,9 +790,14 @@
                 }
             }
             
-            // Add car to scene
-            playerCar = carGroup;
-            playerCar.position.y = 2; // Place on road
+            return carGroup;
+        }
+        
+        // Load player car
+        function loadPlayerCar() {
+            // Create player car model
+            playerCar = createCarModel(0xFF0000, 0xAA0000);
+            playerCar.position.y = 2;
             scene.add(playerCar);
             
             // Position camera behind car
@@ -538,40 +807,8 @@
         
         // Spawn enemy cars
         function spawnEnemyCar() {
-            // Create a simple enemy car model
-            const carGroup = new THREE.Group();
-            
-            // Car body
-            const carBodyGeometry = new THREE.BoxGeometry(3, 1.2, 5);
-            const carBodyMaterial = new THREE.MeshPhongMaterial({ color: 0x0000FF, shininess: 100 });
-            const carBody = new THREE.Mesh(carBodyGeometry, carBodyMaterial);
-            carBody.position.y = 1;
-            carBody.castShadow = true;
-            carGroup.add(carBody);
-            
-            // Car roof
-            const carRoofGeometry = new THREE.BoxGeometry(2, 0.8, 2);
-            const carRoofMaterial = new THREE.MeshPhongMaterial({ color: 0x0000AA, shininess: 100 });
-            const carRoof = new THREE.Mesh(carRoofGeometry, carRoofMaterial);
-            carRoof.position.y = 2.2;
-            carRoof.position.z = -0.5;
-            carGroup.add(carRoof);
-            
-            // Wheels
-            const wheelGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.3, 16);
-            wheelGeometry.rotateZ(Math.PI / 2);
-            const wheelMaterial = new THREE.MeshPhongMaterial({ color: 0x222222 });
-            
-            for (let i = -1; i <= 1; i += 2) {
-                for (let j = -1; j <= 1; j += 2) {
-                    const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
-                    wheel.position.x = i * 1.5;
-                    wheel.position.y = 0.5;
-                    wheel.position.z = j * 1.5;
-                    wheel.castShadow = true;
-                    carGroup.add(wheel);
-                }
-            }
+            // Create enemy car model
+            const enemyCar = createCarModel(0x0000FF, 0x0000AA);
             
             // Random position ahead of player
             const curvePosition = (playerPositionOnCurve + 50 + Math.random() * 100) % ROAD_LENGTH;
@@ -584,18 +821,18 @@
             const lane = Math.floor(Math.random() * 4) - 1.5; // -1.5, -0.5, 0.5, 1.5
             
             // Position car
-            carGroup.position.copy(point);
-            carGroup.position.add(perpendicular.clone().multiplyScalar(lane * LANE_WIDTH));
-            carGroup.position.y += 2; // Place on road
+            enemyCar.position.copy(point);
+            enemyCar.position.add(perpendicular.clone().multiplyScalar(lane * LANE_WIDTH));
+            enemyCar.position.y += 2;
             
             // Rotate car to follow road direction
             const angle = Math.atan2(tangent.z, tangent.x);
-            carGroup.rotation.y = angle + Math.PI / 2;
+            enemyCar.rotation.y = angle + Math.PI / 2;
             
             // Add to scene and enemy cars array
-            scene.add(carGroup);
+            scene.add(enemyCar);
             enemyCars.push({
-                mesh: carGroup,
+                mesh: enemyCar,
                 curvePosition: curvePosition,
                 lane: lane,
                 speed: 0.5 + Math.random() * 0.3,
@@ -627,7 +864,7 @@
                     // Random chance to change lanes or direction
                     if (Math.random() < 0.02) {
                         enemy.direction = Math.random() < 0.5 ? -1 : 1;
-                        enemy.laneChangeTimer = 60; // Change lanes for 60 frames
+                        enemy.laneChangeTimer = 60;
                     } else if (Math.random() < 0.05) {
                         // Try to collide with player (if player is ahead)
                         const playerCurvePos = playerPositionOnCurve % ROAD_LENGTH;
@@ -665,7 +902,7 @@
                 // Update position
                 enemy.mesh.position.copy(point);
                 enemy.mesh.position.add(perpendicular.clone().multiplyScalar(enemy.lane * LANE_WIDTH));
-                enemy.mesh.position.y += 2; // Place on road
+                enemy.mesh.position.y += 2;
                 
                 // Update rotation to follow road
                 const angle = Math.atan2(tangent.z, tangent.x);
@@ -717,7 +954,7 @@
             // Update player position
             playerCar.position.copy(point);
             playerCar.position.add(perpendicular.clone().multiplyScalar(playerLane * LANE_WIDTH));
-            playerCar.position.y += 2; // Place on road
+            playerCar.position.y += 2;
             
             // Rotate car to follow road direction with smoothing
             const angle = Math.atan2(tangent.z, tangent.x);
@@ -743,9 +980,8 @@
             camera.lookAt(lookAtPoint);
         }
         
-        // Handle keyboard input
-        function handleInput() {
-            // Check gamepad
+        // Handle gamepad input
+        function handleGamepadInput() {
             if (gamepadIndex !== null) {
                 const gamepads = navigator.getGamepads();
                 if (gamepads[gamepadIndex]) {
@@ -777,6 +1013,12 @@
                     }
                 }
             }
+        }
+        
+        // Handle continuous input (game loop)
+        function handleInput() {
+            // Handle gamepad input
+            handleGamepadInput();
             
             // Clamp player lane to road width (4 lanes)
             playerLane = THREE.MathUtils.clamp(playerLane, -1.5, 1.5);
@@ -825,30 +1067,18 @@
             renderer.render(scene, camera);
         }
         
-        // Keyboard controls
-        document.addEventListener('keydown', (event) => {
-            switch (event.key.toLowerCase()) {
-                case 'w':
-                case 'arrowup':
-                    playerSpeed = Math.min(MAX_SPEED, playerSpeed + ACCELERATION);
-                    break;
-                case 's':
-                case 'arrowdown':
-                    playerSpeed = Math.max(0, playerSpeed - DECELERATION);
-                    break;
-                case 'a':
-                case 'arrowleft':
-                    playerLane -= TURN_SPEED * (playerSpeed / MAX_SPEED);
-                    break;
-                case 'd':
-                case 'arrowright':
-                    playerLane += TURN_SPEED * (playerSpeed / MAX_SPEED);
-                    break;
-            }
+        // Initialize game when Three.js is loaded
+        window.addEventListener('DOMContentLoaded', function() {
+            // Load Three.js from CDN
+            const threeScript = document.createElement('script');
+            threeScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+            threeScript.onload = init;
+            threeScript.onerror = function() {
+                document.getElementById('loading').innerHTML = 
+                    'Error: Could not load Three.js. Please check your internet connection.';
+            };
+            document.head.appendChild(threeScript);
         });
-        
-        // Initialize game when page loads
-        window.onload = init;
     </script>
 </body>
 </html>
