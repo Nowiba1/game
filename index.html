@@ -1,511 +1,204 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PolyBoard: Local Multiplayer & Bots</title>
-    <style>
-        :root {
-            --bg: #2c3e50;
-            --board-bg: #ecf0f1;
-            --text: #ecf0f1;
-            --panel: #34495e;
-            --accent: #e67e22;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        /* --- UI PANELS --- */
-        #ui-left {
-            width: 300px;
-            padding: 20px;
-            background: var(--panel);
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            border-right: 2px solid rgba(0,0,0,0.2);
-        }
-
-        #ui-right {
-            flex-grow: 1;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .player-card {
-            padding: 10px;
-            border-radius: 8px;
-            background: rgba(0,0,0,0.2);
-            border-left: 8px solid transparent;
-            transition: transform 0.2s;
-        }
-
-        .player-card.active {
-            transform: scale(1.05);
-            background: rgba(255,255,255,0.1);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-
-        #log {
-            flex-grow: 1;
-            background: #1a252f;
-            padding: 10px;
-            font-size: 0.9em;
-            overflow-y: auto;
-            border-radius: 5px;
-            color: #bdc3c7;
-        }
-
-        /* --- BOARD STYLES --- */
-        #board-container {
-            position: relative;
-            width: 700px;
-            height: 700px;
-            background: var(--board-bg);
-            border: 5px solid #2c3e50;
-            box-shadow: 0 0 50px rgba(0,0,0,0.5);
-        }
-
-        .tile {
-            position: absolute;
-            box-sizing: border-box;
-            border: 1px solid #7f8c8d;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            font-size: 10px;
-            color: #2c3e50;
-            text-align: center;
-            padding-top: 5px;
-            overflow: hidden;
-        }
-
-        .tile .header {
-            width: 100%;
-            height: 15px;
-            margin-bottom: 5px;
-        }
-
-        .tile.corner { background: #dcdde1; font-weight: bold; font-size: 12px; justify-content: center;}
-
-        /* --- CONTROLS --- */
-        #controls {
-            margin-top: 20px;
-            display: flex;
-            gap: 10px;
-        }
-
-        button {
-            padding: 12px 25px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            border: none;
-            border-radius: 5px;
-            background: var(--accent);
-            color: white;
-        }
-
-        button:disabled { background: #7f8c8d; cursor: not-allowed; }
-
-        .dice-area {
-            font-size: 40px;
-            margin-bottom: 10px;
-        }
-
-        /* --- TOKENS --- */
-        .token {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            position: absolute;
-            z-index: 10;
-            border: 2px solid white;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-            transition: all 0.5s ease-in-out;
-        }
-
-        /* Modal / Overlay */
-        #setup-overlay {
-            position: fixed;
-            inset: 0;
-            background: var(--bg);
-            z-index: 200;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>Endless Curve Road Game</title>
+<style>
+  body { margin: 0; overflow: hidden; background: #000; }
+  canvas { display: block; }
+</style>
 </head>
 <body>
 
-<div id="setup-overlay">
-    <h1>PolyBoard Setup</h1>
-    <div style="background: var(--panel); padding: 30px; border-radius: 10px; text-align: center;">
-        <p>Select number of players (Total 4):</p>
-        <div style="margin-bottom: 20px;">
-            Human Players: 
-            <select id="human-count">
-                <option value="1">1</option>
-                <option value="2" selected>2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-            </select>
-        </div>
-        <button onclick="startGame()">START GAME</button>
-    </div>
-</div>
-
-<div id="ui-left">
-    <h2>PLAYERS</h2>
-    <div id="player-list"></div>
-    <h3>EVENT LOG</h3>
-    <div id="log">Welcome to PolyBoard! Roll to begin.</div>
-</div>
-
-<div id="ui-right">
-    <div id="board-container">
-        </div>
-
-    <div id="controls">
-        <div class="dice-area" id="dice-display">🎲 🎲</div>
-        <button id="roll-btn" onclick="handleRoll()">ROLL DICE</button>
-        <button id="buy-btn" onclick="handleBuy()" style="display:none; background: #27ae60;">BUY PROPERTY</button>
-        <button id="next-btn" onclick="handleNext()" style="display:none; background: #2980b9;">END TURN</button>
-    </div>
-</div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
 <script>
-    /** --- GAME DATA --- **/
-    const TILE_SIZE = 700 / 11;
-    const START_MONEY = 1500;
-    const COLORS = ['#e74c3c', '#3498db', '#f1c40f', '#2ecc71'];
-    const NAMES = ['Red', 'Blue', 'Yellow', 'Green'];
-    
-    let players = [];
-    let currentPlayerIdx = 0;
-    let board = [];
-    let gameActive = false;
+/* =========================
+   BASIC SETUP
+========================= */
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x87ceeb, 50, 500);
 
-    /** --- TILE DEFINITIONS --- **/
-    const propertyNames = [
-        "Go", "Oak St", "Tax", "Maple Ave", "Chance", "Station A", "Pine Rd", "Chance", "Cedar Ln", "Jail",
-        "Park Way", "Electric", "Lake Dr", "Hill Blvd", "Station B", "Main St", "Tax", "Broadway", "Chance", "Free Parking",
-        "Sunset Strip", "Chance", "Ocean View", "Tax", "Station C", "Wall St", "Chance", "Luxury Tax", "Chance", "Go To Jail",
-        "Dark Ave", "Gold Rd", "Chance", "Emerald St", "Station D", "Chance", "Diamond Plaza", "Tax", "Chance", "Palace"
-    ];
+const camera = new THREE.PerspectiveCamera(
+  75, window.innerWidth / window.innerHeight, 0.1, 1000
+);
 
-    /** --- INITIALIZATION --- **/
-    function initBoardData() {
-        for (let i = 0; i < 40; i++) {
-            let type = "property";
-            if (i === 0) type = "start";
-            else if (i === 10) type = "jail";
-            else if (i === 20) type = "parking";
-            else if (i === 30) type = "gotojail";
-            else if ([2, 16, 23, 37].includes(i)) type = "tax";
-            else if ([4, 7, 18, 21, 26, 28, 32, 35, 38].includes(i)) type = "chance";
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+document.body.appendChild(renderer.domElement);
 
-            board.push({
-                id: i,
-                name: propertyNames[i],
-                type: type,
-                price: (type === "property") ? 60 + (i * 10) : 0,
-                rent: (type === "property") ? 10 + (i * 2) : 0,
-                owner: null,
-                colorGroup: Math.floor(i / 5) // Simple grouping
-            });
-        }
+/* =========================
+   LIGHTING
+========================= */
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+dirLight.position.set(50, 100, 50);
+scene.add(dirLight);
+
+/* =========================
+   ROAD PARAMETERS
+========================= */
+const ROAD_WIDTH = 12;
+const SEGMENT_LENGTH = 20;
+const MAX_POINTS = 200;
+
+/* =========================
+   CURVE POINTS
+========================= */
+let points = [];
+let zPos = 0;
+let xOffset = 0;
+let yOffset = 0;
+
+function generatePoint() {
+  // Turns
+  const turnStrength = Math.random() < 0.3 ? 6 : 2; // hard vs easy
+  xOffset += THREE.MathUtils.clamp(
+    (Math.random() - 0.5) * turnStrength,
+    -8, 8
+  );
+
+  // Hills & dips
+  yOffset += (Math.random() - 0.5) * 2;
+  yOffset = THREE.MathUtils.clamp(yOffset, -6, 6);
+
+  // Speed bumps
+  if (Math.random() < 0.1) {
+    yOffset += 3;
+  }
+
+  zPos -= SEGMENT_LENGTH;
+
+  return new THREE.Vector3(xOffset, yOffset, zPos);
+}
+
+// Initial points
+for (let i = 0; i < MAX_POINTS; i++) {
+  points.push(generatePoint());
+}
+
+/* =========================
+   ROAD MESH
+========================= */
+let roadMesh;
+
+function buildRoad() {
+  if (roadMesh) {
+    roadMesh.geometry.dispose();
+    scene.remove(roadMesh);
+  }
+
+  const curve = new THREE.CatmullRomCurve3(points);
+  curve.curveType = 'catmullrom';
+  curve.tension = 0.5;
+
+  const geometry = new THREE.TubeGeometry(
+    curve,
+    400,
+    ROAD_WIDTH / 2,
+    16,
+    false
+  );
+
+  const material = new THREE.MeshStandardMaterial({
+    color: 0x333333,
+    metalness: 0.1,
+    roughness: 0.9
+  });
+
+  roadMesh = new THREE.Mesh(geometry, material);
+  scene.add(roadMesh);
+
+  return curve;
+}
+
+let roadCurve = buildRoad();
+
+/* =========================
+   PLAYER CAR
+========================= */
+const car = new THREE.Mesh(
+  new THREE.BoxGeometry(2, 1, 4),
+  new THREE.MeshStandardMaterial({ color: 0xff3333 })
+);
+scene.add(car);
+
+let speed = 0.001;
+let distance = 0;
+let laneOffset = 0;
+
+/* =========================
+   INPUT
+========================= */
+const keys = {};
+window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+/* =========================
+   UPDATE LOOP
+========================= */
+function update() {
+  // Speed
+  speed += 0.0000005;
+  distance += speed;
+
+  // Lanes
+  if (keys['a'] || keys['arrowleft']) laneOffset -= 0.1;
+  if (keys['d'] || keys['arrowright']) laneOffset += 0.1;
+  laneOffset = THREE.MathUtils.clamp(laneOffset, -ROAD_WIDTH / 3, ROAD_WIDTH / 3);
+
+  // Move along curve
+  const t = distance % 1;
+  const pos = roadCurve.getPointAt(t);
+  const tangent = roadCurve.getTangentAt(t);
+
+  car.position.copy(pos);
+  car.position.x += laneOffset;
+  car.position.y += 1;
+
+  car.rotation.y = Math.atan2(tangent.x, tangent.z);
+
+  // Camera
+  const camOffset = tangent.clone().multiplyScalar(-10);
+  camOffset.y += 6;
+
+  camera.position.copy(car.position.clone().add(camOffset));
+  camera.lookAt(car.position.clone().add(tangent.multiplyScalar(5)));
+
+  // Extend road
+  if (distance > 0.8) {
+    distance -= 0.2;
+
+    points.splice(0, 10);
+    for (let i = 0; i < 10; i++) {
+      points.push(generatePoint());
     }
 
-    function createBoardUI() {
-        const container = document.getElementById('board-container');
-        board.forEach((tile, i) => {
-            const el = document.createElement('div');
-            el.className = 'tile';
-            if (i % 10 === 0) el.classList.add('corner');
-            
-            // Positioning Logic
-            let x, y;
-            if (i < 10) { x = 10 - i; y = 10; }
-            else if (i < 20) { x = 0; y = 20 - i; }
-            else if (i < 30) { x = i - 20; y = 0; }
-            else { x = 10; y = i - 30; }
+    roadCurve = buildRoad();
+  }
+}
 
-            el.style.left = (x * TILE_SIZE) + 'px';
-            el.style.top = (y * TILE_SIZE) + 'px';
-            el.style.width = TILE_SIZE + 'px';
-            el.style.height = TILE_SIZE + 'px';
+/* =========================
+   RENDER LOOP
+========================= */
+function animate() {
+  requestAnimationFrame(animate);
+  update();
+  renderer.render(scene, camera);
+}
+animate();
 
-            if (tile.type === "property") {
-                const header = document.createElement('div');
-                header.className = 'header';
-                header.style.backgroundColor = getGroupColor(tile.colorGroup);
-                el.appendChild(header);
-                el.innerHTML += `<b>${tile.name}</b><br>$${tile.price}`;
-            } else {
-                el.innerHTML = `<b>${tile.name}</b>`;
-            }
-            
-            el.id = `tile-${i}`;
-            container.appendChild(el);
-        });
-    }
-
-    function startGame() {
-        document.getElementById('setup-overlay').style.display = 'none';
-        const humanCount = parseInt(document.getElementById('human-count').value);
-        
-        initBoardData();
-        createBoardUI();
-
-        for (let i = 0; i < 4; i++) {
-            players.push({
-                id: i,
-                name: (i < humanCount) ? NAMES[i] : NAMES[i] + " (Bot)",
-                color: COLORS[i],
-                money: START_MONEY,
-                pos: 0,
-                isBot: i >= humanCount,
-                inJail: 0,
-                bankrupt: false
-            });
-        }
-
-        updateUI();
-        gameActive = true;
-        checkBotTurn();
-    }
-
-    /** --- LOGIC --- **/
-
-    function handleRoll() {
-        if (!gameActive) return;
-        const p = players[currentPlayerIdx];
-        
-        const d1 = Math.floor(Math.random() * 6) + 1;
-        const d2 = Math.floor(Math.random() * 6) + 1;
-        const total = d1 + d2;
-
-        document.getElementById('dice-display').innerText = getDiceIcon(d1) + " " + getDiceIcon(d2);
-        logMsg(`${p.name} rolled a ${total}`);
-
-        if (p.inJail > 0) {
-            if (d1 === d2) {
-                logMsg(`${p.name} rolled doubles and escaped jail!`);
-                p.inJail = 0;
-            } else {
-                p.inJail--;
-                logMsg(`${p.name} is stuck in jail (${p.inJail} turns left).`);
-                endActionPhase();
-                return;
-            }
-        }
-
-        movePlayer(p, total);
-    }
-
-    function movePlayer(p, steps) {
-        p.pos += steps;
-        if (p.pos >= 40) {
-            p.pos -= 40;
-            p.money += 200;
-            logMsg(`${p.name} passed Start and collected $200`);
-        }
-        
-        updateUI();
-        processTile(p);
-    }
-
-    function processTile(p) {
-        const tile = board[p.pos];
-        document.getElementById('roll-btn').style.display = 'none';
-
-        if (tile.type === "property") {
-            if (tile.owner === null) {
-                if (p.money >= tile.price) {
-                    document.getElementById('buy-btn').style.display = 'inline-block';
-                }
-                document.getElementById('next-btn').style.display = 'inline-block';
-            } else if (tile.owner !== p.id) {
-                const owner = players[tile.owner];
-                pay(p, owner, tile.rent);
-                endActionPhase();
-            } else {
-                logMsg(`You already own ${tile.name}.`);
-                endActionPhase();
-            }
-        } else if (tile.type === "tax") {
-            pay(p, null, 150);
-            endActionPhase();
-        } else if (tile.type === "chance") {
-            handleChance(p);
-            endActionPhase();
-        } else if (tile.type === "gotojail") {
-            logMsg(`${p.name} sent to Jail!`);
-            p.pos = 10;
-            p.inJail = 2;
-            endActionPhase();
-        } else {
-            endActionPhase();
-        }
-        
-        updateUI();
-        
-        if (p.isBot && document.getElementById('buy-btn').style.display !== 'none') {
-            setTimeout(() => { if(p.money >= tile.price + 200) handleBuy(); else handleNext(); }, 800);
-        } else if (p.isBot) {
-            setTimeout(handleNext, 1000);
-        }
-    }
-
-    function handleBuy() {
-        const p = players[currentPlayerIdx];
-        const tile = board[p.pos];
-        if (p.money >= tile.price) {
-            p.money -= tile.price;
-            tile.owner = p.id;
-            logMsg(`${p.name} bought ${tile.name} for $${tile.price}`);
-            
-            // Visual indicator for owner
-            const tileEl = document.getElementById(`tile-${tile.id}`);
-            tileEl.style.borderBottom = `5px solid ${p.color}`;
-        }
-        endActionPhase();
-    }
-
-    function handleNext() {
-        currentPlayerIdx = (currentPlayerIdx + 1) % 4;
-        if (players[currentPlayerIdx].bankrupt) {
-            handleNext();
-            return;
-        }
-        
-        document.getElementById('buy-btn').style.display = 'none';
-        document.getElementById('next-btn').style.display = 'none';
-        document.getElementById('roll-btn').style.display = 'inline-block';
-        updateUI();
-        checkBotTurn();
-    }
-
-    function endActionPhase() {
-        document.getElementById('buy-btn').style.display = 'none';
-        document.getElementById('next-btn').style.display = 'inline-block';
-    }
-
-    function handleChance(p) {
-        const outcomes = [
-            { msg: "Bank error in your favor! Gain $100", amt: 100 },
-            { msg: "Doctor's fee. Pay $50", amt: -50 },
-            { msg: "You inherited $200", amt: 200 },
-            { msg: "Pay school fees of $150", amt: -150 },
-            { msg: "It's your birthday! Gain $50", amt: 50 }
-        ];
-        const roll = Math.floor(Math.random() * outcomes.length);
-        const o = outcomes[roll];
-        p.money += o.amt;
-        logMsg(`Chance: ${o.msg}`);
-    }
-
-    function pay(from, to, amt) {
-        from.money -= amt;
-        if (to) {
-            to.money += amt;
-            logMsg(`${from.name} paid $${amt} rent to ${to.name}`);
-        } else {
-            logMsg(`${from.name} paid $${amt} in taxes`);
-        }
-
-        if (from.money < 0) {
-            logMsg(`${from.name} has gone bankrupt!`);
-            from.bankrupt = true;
-            // Return properties to bank
-            board.forEach(t => { if(t.owner === from.id) t.owner = null; });
-        }
-    }
-
-    function checkBotTurn() {
-        const p = players[currentPlayerIdx];
-        if (p.isBot && !p.bankrupt) {
-            document.getElementById('roll-btn').disabled = true;
-            setTimeout(handleRoll, 1000);
-        } else {
-            document.getElementById('roll-btn').disabled = false;
-        }
-    }
-
-    /** --- HELPERS --- **/
-
-    function updateUI() {
-        const list = document.getElementById('player-list');
-        list.innerHTML = "";
-        players.forEach((p, i) => {
-            const card = document.createElement('div');
-            card.className = `player-card ${i === currentPlayerIdx ? 'active' : ''}`;
-            card.style.borderLeftColor = p.color;
-            card.innerHTML = `
-                <b>${p.name}</b> ${p.bankrupt ? '<small>(BANKRUPT)</small>' : ''}<br>
-                Balance: $${p.money}
-            `;
-            list.appendChild(card);
-        });
-
-        drawTokens();
-    }
-
-    function drawTokens() {
-        // Clear existing
-        document.querySelectorAll('.token').forEach(t => t.remove());
-        
-        players.forEach((p, i) => {
-            if (p.bankrupt) return;
-            const token = document.createElement('div');
-            token.className = 'token';
-            token.style.backgroundColor = p.color;
-            
-            const tileEl = document.getElementById(`tile-${p.pos}`);
-            const rect = tileEl.getBoundingClientRect();
-            const containerRect = document.getElementById('board-container').getBoundingClientRect();
-
-            // Offset to prevent stacking directly on top
-            const offset = (i * 12);
-            token.style.left = (rect.left - containerRect.left + 5 + offset) + 'px';
-            token.style.top = (rect.top - containerRect.top + 35) + 'px';
-            
-            document.getElementById('board-container').appendChild(token);
-        });
-    }
-
-    function logMsg(msg) {
-        const log = document.getElementById('log');
-        log.innerHTML = `> ${msg}<br>` + log.innerHTML;
-    }
-
-    function getGroupColor(id) {
-        const colors = ['#8e44ad', '#2980b9', '#16a085', '#27ae60', '#f39c12', '#d35400', '#c0392b', '#7f8c8d'];
-        return colors[id % colors.length];
-    }
-
-    function getDiceIcon(n) {
-        return ['⚀','⚁','⚂','⚃','⚄','⚅'][n-1];
-    }
-
-    // Adjust board on resize
-    window.addEventListener('resize', drawTokens);
-
+/* =========================
+   RESIZE
+========================= */
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
 </script>
+
 </body>
 </html>
