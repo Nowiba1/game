@@ -1,204 +1,854 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Endless Curve Road Game</title>
-<style>
-  body { margin: 0; overflow: hidden; background: #000; }
-  canvas { display: block; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Endless Road Driving Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            background: #000;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            z-index: 100;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+        }
+        
+        #score {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        #speed {
+            font-size: 18px;
+            color: #4CAF50;
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: white;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 14px;
+            max-width: 300px;
+        }
+        
+        #controls h3 {
+            margin-bottom: 10px;
+            color: #4CAF50;
+        }
+        
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 24px;
+            text-align: center;
+            z-index: 1000;
+        }
+        
+        .gamepad-warning {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: #ff9800;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            max-width: 300px;
+        }
+    </style>
 </head>
 <body>
+    <div id="game-container">
+        <div id="ui">
+            <div id="score">Score: 0</div>
+            <div id="speed">Speed: 0 mph</div>
+        </div>
+        
+        <div id="controls">
+            <h3>Controls</h3>
+            <p><strong>W/↑</strong>: Accelerate</p>
+            <p><strong>S/↓</strong>: Brake/Reverse</p>
+            <p><strong>A/←</strong>: Steer Left</p>
+            <p><strong>D/→</strong>: Steer Right</p>
+            <p><strong>Gamepad</strong>: Supported</p>
+        </div>
+        
+        <div id="loading">Loading game assets...</div>
+    </div>
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <script type="module">
+        // Import Three.js from CDN
+        import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.module.js';
+        import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.132.2/examples/jsm/loaders/GLTFLoader.js';
+        import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.132.2/examples/jsm/controls/OrbitControls.js';
 
-<script>
-/* =========================
-   BASIC SETUP
-========================= */
-const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0x87ceeb, 50, 500);
-
-const camera = new THREE.PerspectiveCamera(
-  75, window.innerWidth / window.innerHeight, 0.1, 1000
-);
-
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(window.devicePixelRatio);
-document.body.appendChild(renderer.domElement);
-
-/* =========================
-   LIGHTING
-========================= */
-scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-
-const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-dirLight.position.set(50, 100, 50);
-scene.add(dirLight);
-
-/* =========================
-   ROAD PARAMETERS
-========================= */
-const ROAD_WIDTH = 12;
-const SEGMENT_LENGTH = 20;
-const MAX_POINTS = 200;
-
-/* =========================
-   CURVE POINTS
-========================= */
-let points = [];
-let zPos = 0;
-let xOffset = 0;
-let yOffset = 0;
-
-function generatePoint() {
-  // Turns
-  const turnStrength = Math.random() < 0.3 ? 6 : 2; // hard vs easy
-  xOffset += THREE.MathUtils.clamp(
-    (Math.random() - 0.5) * turnStrength,
-    -8, 8
-  );
-
-  // Hills & dips
-  yOffset += (Math.random() - 0.5) * 2;
-  yOffset = THREE.MathUtils.clamp(yOffset, -6, 6);
-
-  // Speed bumps
-  if (Math.random() < 0.1) {
-    yOffset += 3;
-  }
-
-  zPos -= SEGMENT_LENGTH;
-
-  return new THREE.Vector3(xOffset, yOffset, zPos);
-}
-
-// Initial points
-for (let i = 0; i < MAX_POINTS; i++) {
-  points.push(generatePoint());
-}
-
-/* =========================
-   ROAD MESH
-========================= */
-let roadMesh;
-
-function buildRoad() {
-  if (roadMesh) {
-    roadMesh.geometry.dispose();
-    scene.remove(roadMesh);
-  }
-
-  const curve = new THREE.CatmullRomCurve3(points);
-  curve.curveType = 'catmullrom';
-  curve.tension = 0.5;
-
-  const geometry = new THREE.TubeGeometry(
-    curve,
-    400,
-    ROAD_WIDTH / 2,
-    16,
-    false
-  );
-
-  const material = new THREE.MeshStandardMaterial({
-    color: 0x333333,
-    metalness: 0.1,
-    roughness: 0.9
-  });
-
-  roadMesh = new THREE.Mesh(geometry, material);
-  scene.add(roadMesh);
-
-  return curve;
-}
-
-let roadCurve = buildRoad();
-
-/* =========================
-   PLAYER CAR
-========================= */
-const car = new THREE.Mesh(
-  new THREE.BoxGeometry(2, 1, 4),
-  new THREE.MeshStandardMaterial({ color: 0xff3333 })
-);
-scene.add(car);
-
-let speed = 0.001;
-let distance = 0;
-let laneOffset = 0;
-
-/* =========================
-   INPUT
-========================= */
-const keys = {};
-window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
-window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
-
-/* =========================
-   UPDATE LOOP
-========================= */
-function update() {
-  // Speed
-  speed += 0.0000005;
-  distance += speed;
-
-  // Lanes
-  if (keys['a'] || keys['arrowleft']) laneOffset -= 0.1;
-  if (keys['d'] || keys['arrowright']) laneOffset += 0.1;
-  laneOffset = THREE.MathUtils.clamp(laneOffset, -ROAD_WIDTH / 3, ROAD_WIDTH / 3);
-
-  // Move along curve
-  const t = distance % 1;
-  const pos = roadCurve.getPointAt(t);
-  const tangent = roadCurve.getTangentAt(t);
-
-  car.position.copy(pos);
-  car.position.x += laneOffset;
-  car.position.y += 1;
-
-  car.rotation.y = Math.atan2(tangent.x, tangent.z);
-
-  // Camera
-  const camOffset = tangent.clone().multiplyScalar(-10);
-  camOffset.y += 6;
-
-  camera.position.copy(car.position.clone().add(camOffset));
-  camera.lookAt(car.position.clone().add(tangent.multiplyScalar(5)));
-
-  // Extend road
-  if (distance > 0.8) {
-    distance -= 0.2;
-
-    points.splice(0, 10);
-    for (let i = 0; i < 10; i++) {
-      points.push(generatePoint());
-    }
-
-    roadCurve = buildRoad();
-  }
-}
-
-/* =========================
-   RENDER LOOP
-========================= */
-function animate() {
-  requestAnimationFrame(animate);
-  update();
-  renderer.render(scene, camera);
-}
-animate();
-
-/* =========================
-   RESIZE
-========================= */
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
-</script>
-
+        // Game variables
+        let scene, camera, renderer, controls;
+        let playerCar = null;
+        let enemyCars = [];
+        let roadCurve, roadMesh;
+        let roadPoints = [];
+        let playerPositionOnCurve = 0;
+        let playerLane = 0; // -1.5, -0.5, 0.5, 1.5 (4 lanes)
+        let playerSpeed = 0;
+        let score = 0;
+        let gamepad = null;
+        let gamepadIndex = null;
+        
+        // Constants
+        const ROAD_LENGTH = 1000; // Number of curve points
+        const ROAD_WIDTH = 16; // 4 lanes, each 4 units wide
+        const LANE_WIDTH = 4;
+        const VISIBLE_ROAD_LENGTH = 200; // How much road to render at once
+        const CAR_LENGTH = 4;
+        const MAX_SPEED = 80;
+        const ACCELERATION = 0.3;
+        const DECELERATION = 0.2;
+        const TURN_SPEED = 0.02;
+        const LANE_CHANGE_SPEED = 0.05;
+        
+        // Road parameters
+        const ROAD_SEGMENT_LENGTH = 5;
+        const CURVE_AMPLITUDE = 150;
+        const HILL_AMPLITUDE = 40;
+        
+        // Initialize the game
+        function init() {
+            // Create scene
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x87CEEB, 300, 800);
+            
+            // Create camera
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
+            
+            // Create renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('game-container').appendChild(renderer.domElement);
+            
+            // Create lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(50, 100, 50);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.camera.left = -100;
+            directionalLight.shadow.camera.right = 100;
+            directionalLight.shadow.camera.top = 100;
+            directionalLight.shadow.camera.bottom = -100;
+            scene.add(directionalLight);
+            
+            // Generate procedural road
+            generateRoad();
+            
+            // Generate procedural buildings
+            generateBuildings();
+            
+            // Load player car
+            loadPlayerCar();
+            
+            // Initialize gamepad
+            window.addEventListener("gamepadconnected", (e) => {
+                console.log("Gamepad connected:", e.gamepad.id);
+                gamepadIndex = e.gamepad.index;
+            });
+            
+            window.addEventListener("gamepaddisconnected", (e) => {
+                console.log("Gamepad disconnected");
+                if (gamepadIndex === e.gamepad.index) {
+                    gamepadIndex = null;
+                }
+            });
+            
+            // Handle window resize
+            window.addEventListener('resize', onWindowResize);
+            
+            // Start game loop
+            animate();
+            
+            // Hide loading screen
+            document.getElementById('loading').style.display = 'none';
+        }
+        
+        // Generate procedural road using CatmullRomCurve3
+        function generateRoad() {
+            // Clear existing road points
+            roadPoints = [];
+            
+            // Generate random road points with curves, hills, and dips
+            for (let i = 0; i < ROAD_LENGTH; i++) {
+                // Base position along Z axis
+                let x = 0;
+                let y = 0;
+                let z = i * ROAD_SEGMENT_LENGTH;
+                
+                // Add curves (horizontal displacement)
+                // Large curves for turns
+                if (i > 200 && i < 300) {
+                    x = Math.sin((i - 200) * 0.03) * 80; // Right turn
+                } else if (i > 500 && i < 600) {
+                    x = -Math.sin((i - 500) * 0.03) * 100; // Left turn
+                } else if (i > 800 && i < 900) {
+                    x = Math.sin((i - 800) * 0.02) * 60; // Gentle right turn
+                } else {
+                    // Random small curves
+                    x = Math.sin(i * 0.01) * 30;
+                }
+                
+                // Add hills and dips (vertical displacement)
+                // Large hill
+                if (i > 100 && i < 200) {
+                    y = Math.sin((i - 100) * 0.05) * 30; // Hill
+                } 
+                // Dip
+                else if (i > 400 && i < 450) {
+                    y = -Math.abs(Math.sin((i - 400) * 0.1)) * 20; // Dip
+                }
+                // Speed bumps (small periodic dips)
+                else if (i > 300 && i < 350) {
+                    y = Math.abs(Math.sin(i * 0.3)) * 2; // Speed bumps
+                }
+                // Downhill
+                else if (i > 600 && i < 700) {
+                    y = -Math.sin((i - 600) * 0.03) * 25; // Downhill
+                }
+                // Uphill
+                else if (i > 900 && i < 1000) {
+                    y = Math.sin((i - 900) * 0.03) * 35; // Uphill
+                }
+                else {
+                    // Random small hills
+                    y = Math.sin(i * 0.02) * 10;
+                }
+                
+                roadPoints.push(new THREE.Vector3(x, y, z));
+            }
+            
+            // Create Catmull-Rom curve from points
+            roadCurve = new THREE.CatmullRomCurve3(roadPoints);
+            roadCurve.curveType = 'centripetal';
+            roadCurve.closed = false;
+            
+            // Generate road mesh from curve
+            createRoadMesh();
+        }
+        
+        // Create a single continuous road mesh from the curve
+        function createRoadMesh() {
+            // Remove old road mesh if exists
+            if (roadMesh) {
+                scene.remove(roadMesh);
+                roadMesh.geometry.dispose();
+                roadMesh.material.dispose();
+            }
+            
+            // Road geometry parameters
+            const roadSegments = VISIBLE_ROAD_LENGTH * 2; // Higher resolution for smoothness
+            const roadWidth = ROAD_WIDTH;
+            
+            // Generate road geometry from curve
+            const roadGeometry = new THREE.BufferGeometry();
+            const vertices = [];
+            const normals = [];
+            const uvs = [];
+            
+            // Get points along the curve for the visible section
+            const startPoint = Math.max(0, Math.floor(playerPositionOnCurve) - 50);
+            const endPoint = Math.min(ROAD_LENGTH - 1, startPoint + VISIBLE_ROAD_LENGTH);
+            
+            // Create road vertices along the curve
+            for (let i = startPoint; i < endPoint; i++) {
+                const t = i / (ROAD_LENGTH - 1);
+                const tNext = (i + 1) / (ROAD_LENGTH - 1);
+                
+                // Get point and tangent at current position
+                const point = roadCurve.getPoint(t);
+                const pointNext = roadCurve.getPoint(tNext);
+                
+                // Calculate direction vector
+                const direction = new THREE.Vector3().subVectors(pointNext, point).normalize();
+                
+                // Calculate perpendicular vector (road width direction)
+                const perpendicular = new THREE.Vector3(-direction.z, 0, direction.x).normalize();
+                
+                // Calculate road edges
+                const leftEdge = point.clone().add(perpendicular.clone().multiplyScalar(roadWidth / 2));
+                const rightEdge = point.clone().add(perpendicular.clone().multiplyScalar(-roadWidth / 2));
+                
+                // Get next point for triangle strip
+                const pointNextLeft = roadCurve.getPoint(tNext).clone().add(perpendicular.clone().multiplyScalar(roadWidth / 2));
+                const pointNextRight = roadCurve.getPoint(tNext).clone().add(perpendicular.clone().multiplyScalar(-roadWidth / 2));
+                
+                // Create two triangles for each segment (forming a quad)
+                // First triangle (left)
+                vertices.push(leftEdge.x, leftEdge.y, leftEdge.z);
+                vertices.push(rightEdge.x, rightEdge.y, rightEdge.z);
+                vertices.push(pointNextLeft.x, pointNextLeft.y, pointNextLeft.z);
+                
+                // Second triangle (right)
+                vertices.push(rightEdge.x, rightEdge.y, rightEdge.z);
+                vertices.push(pointNextRight.x, pointNextRight.y, pointNextRight.z);
+                vertices.push(pointNextLeft.x, pointNextLeft.y, pointNextLeft.z);
+                
+                // Calculate normals (pointing up)
+                for (let j = 0; j < 6; j++) {
+                    normals.push(0, 1, 0);
+                }
+                
+                // UV coordinates for texturing
+                const uvX = (i - startPoint) / (endPoint - startPoint);
+                const uvXNext = (i + 1 - startPoint) / (endPoint - startPoint);
+                
+                // First triangle UVs
+                uvs.push(uvX, 0);
+                uvs.push(uvX, 1);
+                uvs.push(uvXNext, 0);
+                
+                // Second triangle UVs
+                uvs.push(uvX, 1);
+                uvs.push(uvXNext, 1);
+                uvs.push(uvXNext, 0);
+            }
+            
+            // Set geometry attributes
+            roadGeometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            roadGeometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+            roadGeometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+            
+            // Create road material
+            const roadMaterial = new THREE.MeshPhongMaterial({
+                color: 0x333333,
+                side: THREE.DoubleSide,
+                shininess: 30
+            });
+            
+            // Create road mesh
+            roadMesh = new THREE.Mesh(roadGeometry, roadMaterial);
+            roadMesh.receiveShadow = true;
+            scene.add(roadMesh);
+            
+            // Add lane markings
+            addLaneMarkings(startPoint, endPoint);
+        }
+        
+        // Add lane markings to the road
+        function addLaneMarkings(startPoint, endPoint) {
+            const laneMarkingGeometry = new THREE.BufferGeometry();
+            const laneMarkingVertices = [];
+            const laneMarkingColors = [];
+            
+            // Create lane markings for visible road section
+            for (let i = startPoint; i < endPoint; i += 2) { // Less frequent for performance
+                const t = i / (ROAD_LENGTH - 1);
+                const point = roadCurve.getPoint(t);
+                
+                // Get tangent and perpendicular
+                const tangent = roadCurve.getTangent(t);
+                const perpendicular = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
+                
+                // Create lane markings at lane divisions
+                for (let lane = -1; lane <= 2; lane++) {
+                    // Skip center markings for solid lines
+                    if (lane === 0 || lane === 1) continue;
+                    
+                    const lanePos = (lane - 0.5) * LANE_WIDTH;
+                    const markingPos = point.clone().add(perpendicular.clone().multiplyScalar(lanePos));
+                    
+                    // Short dash for lane markings
+                    const dashLength = 3;
+                    const dashStart = markingPos.clone();
+                    const dashEnd = roadCurve.getPoint((i + 0.5) / (ROAD_LENGTH - 1))
+                        .clone().add(perpendicular.clone().multiplyScalar(lanePos));
+                    
+                    // Create a single dash
+                    laneMarkingVertices.push(
+                        dashStart.x, dashStart.y + 0.02, dashStart.z,
+                        dashEnd.x, dashEnd.y + 0.02, dashEnd.z
+                    );
+                    
+                    // White color for markings
+                    for (let j = 0; j < 2; j++) {
+                        laneMarkingColors.push(1, 1, 1);
+                    }
+                }
+            }
+            
+            // Set geometry attributes
+            laneMarkingGeometry.setAttribute('position', new THREE.Float32BufferAttribute(laneMarkingVertices, 3));
+            laneMarkingGeometry.setAttribute('color', new THREE.Float32BufferAttribute(laneMarkingColors, 3));
+            
+            // Create lane marking material
+            const laneMarkingMaterial = new THREE.LineBasicMaterial({
+                vertexColors: true,
+                linewidth: 2
+            });
+            
+            // Create lane marking mesh
+            const laneMarkings = new THREE.LineSegments(laneMarkingGeometry, laneMarkingMaterial);
+            scene.add(laneMarkings);
+        }
+        
+        // Generate procedural buildings along the road
+        function generateBuildings() {
+            const buildingColors = [
+                0x8B4513, 0xA0522D, 0xD2691E, 0xCD853F,
+                0x708090, 0x778899, 0xB0C4DE, 0x6495ED,
+                0x4682B4, 0x5F9EA0, 0x696969, 0x808080
+            ];
+            
+            // Create buildings on both sides of the road
+            for (let i = 0; i < ROAD_LENGTH; i += 10) {
+                const t = i / (ROAD_LENGTH - 1);
+                const point = roadCurve.getPoint(t);
+                
+                // Get tangent and perpendicular
+                const tangent = roadCurve.getTangent(t);
+                const perpendicular = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
+                
+                // Create buildings on left and right sides
+                for (let side = -1; side <= 1; side += 2) {
+                    // Random chance to place a building
+                    if (Math.random() > 0.7) continue;
+                    
+                    // Distance from road
+                    const distance = 30 + Math.random() * 50;
+                    
+                    // Building position
+                    const buildingPos = point.clone().add(
+                        perpendicular.clone().multiplyScalar(side * (ROAD_WIDTH / 2 + distance))
+                    );
+                    
+                    // Random building dimensions
+                    const width = 8 + Math.random() * 15;
+                    const depth = 8 + Math.random() * 15;
+                    const height = 15 + Math.random() * 40;
+                    
+                    // Create building geometry
+                    const buildingGeometry = new THREE.BoxGeometry(width, height, depth);
+                    
+                    // Create building material with random color
+                    const buildingMaterial = new THREE.MeshPhongMaterial({
+                        color: buildingColors[Math.floor(Math.random() * buildingColors.length)],
+                        shininess: 10
+                    });
+                    
+                    // Create building mesh
+                    const building = new THREE.Mesh(buildingGeometry, buildingMaterial);
+                    building.position.copy(buildingPos);
+                    building.position.y = height / 2; // Place on ground
+                    
+                    // Rotate building to face road
+                    const angle = Math.atan2(perpendicular.z, perpendicular.x);
+                    building.rotation.y = angle + (side === 1 ? Math.PI : 0);
+                    
+                    // Add shadows
+                    building.castShadow = true;
+                    building.receiveShadow = true;
+                    
+                    scene.add(building);
+                }
+            }
+        }
+        
+        // Load player car from external GLB file
+        function loadPlayerCar() {
+            // Since we can't actually load external files in this environment,
+            // we'll create a simple car model as a fallback
+            
+            // Create a simple car model
+            const carGroup = new THREE.Group();
+            
+            // Car body
+            const carBodyGeometry = new THREE.BoxGeometry(3, 1.2, 5);
+            const carBodyMaterial = new THREE.MeshPhongMaterial({ color: 0xFF0000, shininess: 100 });
+            const carBody = new THREE.Mesh(carBodyGeometry, carBodyMaterial);
+            carBody.position.y = 1;
+            carBody.castShadow = true;
+            carBody.receiveShadow = true;
+            carGroup.add(carBody);
+            
+            // Car roof
+            const carRoofGeometry = new THREE.BoxGeometry(2, 0.8, 2);
+            const carRoofMaterial = new THREE.MeshPhongMaterial({ color: 0xAA0000, shininess: 100 });
+            const carRoof = new THREE.Mesh(carRoofGeometry, carRoofMaterial);
+            carRoof.position.y = 2.2;
+            carRoof.position.z = -0.5;
+            carRoof.castShadow = true;
+            carGroup.add(carRoof);
+            
+            // Wheels
+            const wheelGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.3, 16);
+            wheelGeometry.rotateZ(Math.PI / 2);
+            const wheelMaterial = new THREE.MeshPhongMaterial({ color: 0x222222 });
+            
+            for (let i = -1; i <= 1; i += 2) {
+                for (let j = -1; j <= 1; j += 2) {
+                    const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+                    wheel.position.x = i * 1.5;
+                    wheel.position.y = 0.5;
+                    wheel.position.z = j * 1.5;
+                    wheel.castShadow = true;
+                    carGroup.add(wheel);
+                }
+            }
+            
+            // Add car to scene
+            playerCar = carGroup;
+            playerCar.position.y = 2; // Place on road
+            scene.add(playerCar);
+            
+            // Position camera behind car
+            camera.position.set(0, 5, -10);
+            camera.lookAt(playerCar.position);
+        }
+        
+        // Spawn enemy cars
+        function spawnEnemyCar() {
+            // Create a simple enemy car model
+            const carGroup = new THREE.Group();
+            
+            // Car body
+            const carBodyGeometry = new THREE.BoxGeometry(3, 1.2, 5);
+            const carBodyMaterial = new THREE.MeshPhongMaterial({ color: 0x0000FF, shininess: 100 });
+            const carBody = new THREE.Mesh(carBodyGeometry, carBodyMaterial);
+            carBody.position.y = 1;
+            carBody.castShadow = true;
+            carGroup.add(carBody);
+            
+            // Car roof
+            const carRoofGeometry = new THREE.BoxGeometry(2, 0.8, 2);
+            const carRoofMaterial = new THREE.MeshPhongMaterial({ color: 0x0000AA, shininess: 100 });
+            const carRoof = new THREE.Mesh(carRoofGeometry, carRoofMaterial);
+            carRoof.position.y = 2.2;
+            carRoof.position.z = -0.5;
+            carGroup.add(carRoof);
+            
+            // Wheels
+            const wheelGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.3, 16);
+            wheelGeometry.rotateZ(Math.PI / 2);
+            const wheelMaterial = new THREE.MeshPhongMaterial({ color: 0x222222 });
+            
+            for (let i = -1; i <= 1; i += 2) {
+                for (let j = -1; j <= 1; j += 2) {
+                    const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+                    wheel.position.x = i * 1.5;
+                    wheel.position.y = 0.5;
+                    wheel.position.z = j * 1.5;
+                    wheel.castShadow = true;
+                    carGroup.add(wheel);
+                }
+            }
+            
+            // Random position ahead of player
+            const curvePosition = (playerPositionOnCurve + 50 + Math.random() * 100) % ROAD_LENGTH;
+            const t = curvePosition / (ROAD_LENGTH - 1);
+            const point = roadCurve.getPoint(t);
+            const tangent = roadCurve.getTangent(t);
+            const perpendicular = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
+            
+            // Random lane
+            const lane = Math.floor(Math.random() * 4) - 1.5; // -1.5, -0.5, 0.5, 1.5
+            
+            // Position car
+            carGroup.position.copy(point);
+            carGroup.position.add(perpendicular.clone().multiplyScalar(lane * LANE_WIDTH));
+            carGroup.position.y += 2; // Place on road
+            
+            // Rotate car to follow road direction
+            const angle = Math.atan2(tangent.z, tangent.x);
+            carGroup.rotation.y = angle + Math.PI / 2;
+            
+            // Add to scene and enemy cars array
+            scene.add(carGroup);
+            enemyCars.push({
+                mesh: carGroup,
+                curvePosition: curvePosition,
+                lane: lane,
+                speed: 0.5 + Math.random() * 0.3,
+                laneChangeTimer: 0,
+                direction: 0 // -1 for left, 1 for right, 0 for stay
+            });
+        }
+        
+        // Update enemy cars AI
+        function updateEnemyCars() {
+            for (let i = enemyCars.length - 1; i >= 0; i--) {
+                const enemy = enemyCars[i];
+                
+                // Move along curve
+                enemy.curvePosition += enemy.speed;
+                if (enemy.curvePosition >= ROAD_LENGTH) {
+                    enemy.curvePosition -= ROAD_LENGTH;
+                }
+                
+                // Get position on curve
+                const t = enemy.curvePosition / (ROAD_LENGTH - 1);
+                const point = roadCurve.getPoint(t);
+                const tangent = roadCurve.getTangent(t);
+                const perpendicular = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
+                
+                // Update lane change behavior
+                enemy.laneChangeTimer--;
+                if (enemy.laneChangeTimer <= 0) {
+                    // Random chance to change lanes or direction
+                    if (Math.random() < 0.02) {
+                        enemy.direction = Math.random() < 0.5 ? -1 : 1;
+                        enemy.laneChangeTimer = 60; // Change lanes for 60 frames
+                    } else if (Math.random() < 0.05) {
+                        // Try to collide with player (if player is ahead)
+                        const playerCurvePos = playerPositionOnCurve % ROAD_LENGTH;
+                        const distanceToPlayer = (enemy.curvePosition - playerCurvePos + ROAD_LENGTH) % ROAD_LENGTH;
+                        
+                        if (distanceToPlayer < 50 && distanceToPlayer > 10) {
+                            // Move toward player's lane
+                            const playerLaneCenter = playerLane;
+                            const enemyLaneCenter = enemy.lane;
+                            
+                            if (playerLaneCenter > enemyLaneCenter) {
+                                enemy.direction = 1; // Move right
+                            } else if (playerLaneCenter < enemyLaneCenter) {
+                                enemy.direction = -1; // Move left
+                            }
+                            enemy.laneChangeTimer = 30;
+                        }
+                    } else {
+                        enemy.direction = 0;
+                    }
+                }
+                
+                // Apply lane change
+                if (enemy.direction !== 0) {
+                    const targetLane = enemy.lane + enemy.direction * LANE_CHANGE_SPEED;
+                    
+                    // Clamp to road width
+                    if (targetLane >= -1.5 && targetLane <= 1.5) {
+                        enemy.lane = targetLane;
+                    } else {
+                        enemy.direction = 0;
+                    }
+                }
+                
+                // Update position
+                enemy.mesh.position.copy(point);
+                enemy.mesh.position.add(perpendicular.clone().multiplyScalar(enemy.lane * LANE_WIDTH));
+                enemy.mesh.position.y += 2; // Place on road
+                
+                // Update rotation to follow road
+                const angle = Math.atan2(tangent.z, tangent.x);
+                enemy.mesh.rotation.y = angle + Math.PI / 2;
+                
+                // Check collision with player
+                const playerPos = playerCar.position;
+                const enemyPos = enemy.mesh.position;
+                const distance = playerPos.distanceTo(enemyPos);
+                
+                if (distance < 3) {
+                    // Collision detected - reduce player speed
+                    playerSpeed *= 0.5;
+                    score = Math.max(0, score - 10);
+                    
+                    // Remove enemy car
+                    scene.remove(enemy.mesh);
+                    enemyCars.splice(i, 1);
+                }
+                
+                // Remove enemy if too far behind player
+                const playerCurvePos = playerPositionOnCurve % ROAD_LENGTH;
+                const enemyCurvePos = enemy.curvePosition % ROAD_LENGTH;
+                let distanceBehind = (enemyCurvePos - playerCurvePos + ROAD_LENGTH) % ROAD_LENGTH;
+                if (distanceBehind > ROAD_LENGTH / 2) distanceBehind -= ROAD_LENGTH;
+                
+                if (distanceBehind < -50) {
+                    scene.remove(enemy.mesh);
+                    enemyCars.splice(i, 1);
+                }
+            }
+            
+            // Spawn new enemy cars based on score
+            if (enemyCars.length < 5 + Math.floor(score / 100)) {
+                if (Math.random() < 0.05) {
+                    spawnEnemyCar();
+                }
+            }
+        }
+        
+        // Update player car position
+        function updatePlayerCar() {
+            // Get current position on curve
+            const t = (playerPositionOnCurve % ROAD_LENGTH) / (ROAD_LENGTH - 1);
+            const point = roadCurve.getPoint(t);
+            const tangent = roadCurve.getTangent(t);
+            const perpendicular = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
+            
+            // Update player position
+            playerCar.position.copy(point);
+            playerCar.position.add(perpendicular.clone().multiplyScalar(playerLane * LANE_WIDTH));
+            playerCar.position.y += 2; // Place on road
+            
+            // Rotate car to follow road direction with smoothing
+            const angle = Math.atan2(tangent.z, tangent.x);
+            const targetRotation = angle + Math.PI / 2;
+            
+            // Smooth rotation
+            const rotationDiff = targetRotation - playerCar.rotation.y;
+            const normalizedDiff = ((rotationDiff + Math.PI) % (Math.PI * 2)) - Math.PI;
+            playerCar.rotation.y += normalizedDiff * 0.1;
+            
+            // Tilt car slightly when turning
+            const tiltAmount = -normalizedDiff * 0.5;
+            playerCar.rotation.z = THREE.MathUtils.lerp(playerCar.rotation.z, tiltAmount, 0.1);
+            
+            // Update camera position (third-person behind car)
+            const cameraOffset = new THREE.Vector3(0, 5, -15);
+            cameraOffset.applyQuaternion(playerCar.quaternion);
+            camera.position.copy(playerCar.position).add(cameraOffset);
+            
+            // Make camera look slightly ahead of car
+            const lookAtPoint = playerCar.position.clone();
+            lookAtPoint.add(tangent.clone().multiplyScalar(20));
+            camera.lookAt(lookAtPoint);
+        }
+        
+        // Handle keyboard input
+        function handleInput() {
+            // Check gamepad
+            if (gamepadIndex !== null) {
+                const gamepads = navigator.getGamepads();
+                if (gamepads[gamepadIndex]) {
+                    gamepad = gamepads[gamepadIndex];
+                    
+                    // Left stick for steering
+                    if (Math.abs(gamepad.axes[0]) > 0.1) {
+                        playerLane += gamepad.axes[0] * TURN_SPEED * (playerSpeed / MAX_SPEED);
+                    }
+                    
+                    // Right trigger for acceleration
+                    if (gamepad.buttons[7]) {
+                        playerSpeed = Math.min(MAX_SPEED, playerSpeed + ACCELERATION * (gamepad.buttons[7].value || 0.5));
+                    }
+                    
+                    // Left trigger for brake
+                    if (gamepad.buttons[6]) {
+                        playerSpeed = Math.max(0, playerSpeed - DECELERATION * (gamepad.buttons[6].value || 0.5));
+                    }
+                    
+                    // A button for acceleration
+                    if (gamepad.buttons[0] && gamepad.buttons[0].pressed) {
+                        playerSpeed = Math.min(MAX_SPEED, playerSpeed + ACCELERATION);
+                    }
+                    
+                    // B button for brake
+                    if (gamepad.buttons[1] && gamepad.buttons[1].pressed) {
+                        playerSpeed = Math.max(0, playerSpeed - DECELERATION * 2);
+                    }
+                }
+            }
+            
+            // Clamp player lane to road width (4 lanes)
+            playerLane = THREE.MathUtils.clamp(playerLane, -1.5, 1.5);
+            
+            // Update player position along curve based on speed
+            playerPositionOnCurve += playerSpeed * 0.1;
+            
+            // Loop around if at end of road
+            if (playerPositionOnCurve >= ROAD_LENGTH) {
+                playerPositionOnCurve -= ROAD_LENGTH;
+                score += 100; // Bonus for completing a lap
+            }
+            
+            // Update score based on speed
+            score += Math.floor(playerSpeed * 0.1);
+            
+            // Update UI
+            document.getElementById('score').textContent = `Score: ${score}`;
+            document.getElementById('speed').textContent = `Speed: ${Math.round(playerSpeed)} mph`;
+        }
+        
+        // Window resize handler
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Handle input
+            handleInput();
+            
+            // Update player car
+            updatePlayerCar();
+            
+            // Update enemy cars
+            updateEnemyCars();
+            
+            // Regenerate road mesh for visible section
+            createRoadMesh();
+            
+            // Render scene
+            renderer.render(scene, camera);
+        }
+        
+        // Keyboard controls
+        document.addEventListener('keydown', (event) => {
+            switch (event.key.toLowerCase()) {
+                case 'w':
+                case 'arrowup':
+                    playerSpeed = Math.min(MAX_SPEED, playerSpeed + ACCELERATION);
+                    break;
+                case 's':
+                case 'arrowdown':
+                    playerSpeed = Math.max(0, playerSpeed - DECELERATION);
+                    break;
+                case 'a':
+                case 'arrowleft':
+                    playerLane -= TURN_SPEED * (playerSpeed / MAX_SPEED);
+                    break;
+                case 'd':
+                case 'arrowright':
+                    playerLane += TURN_SPEED * (playerSpeed / MAX_SPEED);
+                    break;
+            }
+        });
+        
+        // Initialize game when page loads
+        window.onload = init;
+    </script>
 </body>
 </html>
